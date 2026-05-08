@@ -176,6 +176,8 @@ if (!empty($admin['profile_photo']) && file_exists($upload_dir . $admin['profile
 <title>Admin Change Password</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css">
 
+<link rel="icon" type="image/png" href="../assets/logo2.png">
+
 <style>
 * {
     margin: 0;

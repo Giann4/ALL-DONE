@@ -160,6 +160,8 @@ while ($row = $requests->fetch_assoc()) {
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Teacher Requests</title>
 
+<link rel="icon" type="image/png" href="../assets/logo2.png">
+
 <script>
 (function () {
     const savedTheme = localStorage.getItem("site_theme");

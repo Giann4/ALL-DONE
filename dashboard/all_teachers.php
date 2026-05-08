@@ -13,6 +13,10 @@ $current_page = basename($_SERVER['PHP_SELF']);
 $default_photo = "../assets/logo2.png";
 $top_logo = "../assets/logo2.png";
 
+if (!file_exists($default_photo)) {
+    $default_photo = "../assets/southern.png";
+}
+
 if (!file_exists($top_logo)) {
     $top_logo = $default_photo;
 }
@@ -32,7 +36,7 @@ $student_photo = $default_photo;
 if (!empty($user['profile_photo'])) {
     $student_photo_path = "../assets/uploads/profile/" . $user['profile_photo'];
 
-    if (file_exists($student_photo_path)) {
+    if (file_exists($student_photo_path) && is_file($student_photo_path)) {
         $student_photo = $student_photo_path;
     }
 }
@@ -60,6 +64,8 @@ $total_teachers = count($teachers);
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>All Teachers</title>
+
+<link rel="icon" type="image/png" href="../assets/logo2.png">
 
 <script>
 (function () {
@@ -492,7 +498,7 @@ body{
     height:112px;
     border-radius:50%;
     padding:4px;
-    background:#ffffff;
+    background:linear-gradient(135deg, #ffffff 0%, #eaffef 45%, #18d675 100%);
     border:3px solid #cceec3;
     position:relative;
     z-index:2;
@@ -506,6 +512,8 @@ body{
     border-radius:50%;
     object-fit:cover;
     display:block;
+    background:#ffffff;
+    border:3px solid #ffffff;
 }
 
 .teacher-dept-badge{
@@ -685,7 +693,7 @@ body{
                             src="<?php echo htmlspecialchars($student_photo); ?>" 
                             alt="Student Photo" 
                             class="profile-img" 
-                            onerror="this.onerror=null; this.src='../assets/southern.png';"
+                            onerror="this.onerror=null; this.src='../assets/logo2.png';"
                         >
                     </div>
 
@@ -736,7 +744,7 @@ body{
                     src="<?php echo htmlspecialchars($top_logo); ?>" 
                     class="top-logo" 
                     alt="Logo" 
-                    onerror="this.onerror=null; this.src='../assets/southern.png';"
+                    onerror="this.onerror=null; this.src='../assets/logo2.png';"
                 >
 
                 <div>
@@ -759,12 +767,12 @@ body{
                     <div class="teacher-grid">
                         <?php foreach ($teachers as $teacher): ?>
                             <?php
-                                $teacher_photo = "../assets/southern.png";
+                                $teacher_photo = $default_photo;
 
                                 if (!empty($teacher['teacher_photo'])) {
                                     $teacher_photo_path = "../assets/uploads/teacher_album/" . $teacher['teacher_photo'];
 
-                                    if (file_exists($teacher_photo_path)) {
+                                    if (file_exists($teacher_photo_path) && is_file($teacher_photo_path)) {
                                         $teacher_photo = $teacher_photo_path;
                                     }
                                 }
@@ -782,7 +790,7 @@ body{
                                         src="<?php echo htmlspecialchars($teacher_photo); ?>" 
                                         alt="Teacher Photo" 
                                         class="teacher-photo" 
-                                        onerror="this.onerror=null; this.src='../assets/southern.png';"
+                                        onerror="this.onerror=null; this.src='../assets/logo2.png';"
                                     >
                                 </div>
 

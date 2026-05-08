@@ -134,6 +134,8 @@ $stmt->close();
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Student Dashboard</title>
 
+<link rel="icon" type="image/png" href="../assets/logo2.png">
+
 <link rel="preload" as="image" href="../assets/southern.png">
 <link rel="preload" as="image" href="<?php echo htmlspecialchars($top_header_logo); ?>">
 

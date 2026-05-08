@@ -250,6 +250,8 @@ $current_page = basename($_SERVER['PHP_SELF']);
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Change Password</title>
 
+<link rel="icon" type="image/png" href="../assets/logo2.png">
+
 <script>
 (function () {
     const savedTheme = localStorage.getItem("site_theme");
@@ -764,16 +766,34 @@ body{
     width:150px;
     height:150px;
     border-radius:50%;
-    object-fit:cover;
-    border:5px solid #063946;
+    object-fit:contain;
+
+    padding:10px;
+
+    background:#ffffff;
+
+    border:5px solid #8fbc67;
+
     margin:0 auto 18px;
     display:block;
-    background:#0f3c43;
+
+    box-shadow:
+        0 0 0 6px rgba(143,188,103,0.15),
+        0 14px 30px rgba(0,0,0,0.22),
+        0 0 22px rgba(143,188,103,0.38);
+
+    transition:.25s ease;
+}
+
+.big-photo:hover{
+    transform:scale(1.03);
 }
 
 .dark-mode .big-photo{
-    border-color:#8fbc67;
+    background:#ffffff;
+    border-color:#a7d97b;
 }
+
 
 .upload-row{
     display:flex;

@@ -11,9 +11,14 @@ $message = "";
 $current_page = basename($_SERVER['PHP_SELF']);
 $admin_name = isset($_SESSION['name']) && !empty($_SESSION['name']) ? $_SESSION['name'] : 'Administrator';
 
+/* DEFAULT LOGO / FALLBACK */
+$default_logo = "../assets/logo2.png";
+if (!file_exists($default_logo)) {
+    $default_logo = "../assets/southern.png";
+}
+
 /* ADMIN PROFILE PHOTO */
-$default_admin_photo = "../assets/southern.png";
-$admin_photo = $default_admin_photo;
+$admin_photo = $default_logo;
 $admin_id = isset($_SESSION['user_id']) ? intval($_SESSION['user_id']) : 0;
 
 if ($admin_id > 0) {
@@ -74,7 +79,10 @@ if (isset($_POST['add_teacher_album'])) {
             if (in_array($file_ext, $allowed)) {
                 $teacher_photo_name = time() . "_" . rand(1000, 9999) . "." . $file_ext;
                 $destination = $upload_dir . $teacher_photo_name;
-                move_uploaded_file($file_tmp, $destination);
+
+                if (!move_uploaded_file($file_tmp, $destination)) {
+                    $teacher_photo_name = "";
+                }
             }
         }
 
@@ -186,6 +194,8 @@ $totalTeachersAlbum = $teachers ? $teachers->num_rows : 0;
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Admin Teacher Album</title>
 
+<link rel="icon" type="image/png" href="../assets/logo2.png">
+
 <style>
 * {
     margin: 0;
@@ -289,7 +299,7 @@ body.light-mode {
     border-radius: 50%;
     border: 3px solid #ffffff;
     object-fit: cover;
-    background: #fff;
+    background: #ffffff;
 }
 
 .online-dot {
@@ -433,8 +443,9 @@ body.light-mode {
     width: 58px;
     height: 58px;
     border-radius: 50%;
-    object-fit: cover;
+    object-fit: contain;
     background: #fff;
+    padding: 5px;
     border: 3px solid rgba(255,255,255,0.78);
     box-shadow: 0 10px 22px rgba(0,0,0,0.16);
 }
@@ -630,6 +641,7 @@ body.light-mode {
     overflow: hidden;
     border: 2px solid #334155;
     margin-bottom: 12px;
+    background: #fff;
 }
 
 .current-preview img {
@@ -675,7 +687,7 @@ body.light-mode {
     transform: translateY(-2px);
 }
 
-/* SAME UI AS STUDENT TEACHER CARDS - ADMIN VERSION */
+/* TEACHER CARDS */
 .album-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
@@ -736,7 +748,7 @@ body.light-mode {
     border: 4px solid #cceec3;
     position: relative;
     z-index: 2;
-    margin: 30px 0 22px 52px;
+    margin: 30px auto 22px;
     box-shadow: 0 12px 26px rgba(0,0,0,.20);
 }
 
@@ -746,6 +758,12 @@ body.light-mode {
     border-radius: 50%;
     object-fit: cover;
     display: block;
+    background: #ffffff;
+}
+
+.teacher-photo.logo-fallback {
+    object-fit: contain;
+    padding: 12px;
 }
 
 .teacher-dept {
@@ -1010,11 +1028,6 @@ body:not(.light-mode) .teacher-info {
     .album-grid {
         grid-template-columns: 1fr;
     }
-
-    .teacher-photo-wrap {
-        margin-left: auto;
-        margin-right: auto;
-    }
 }
 
 @media (max-width: 540px) {
@@ -1052,7 +1065,7 @@ body:not(.light-mode) .teacher-info {
 
                 <div class="profile-box">
                     <div class="profile-icon-wrap">
-                        <img src="<?php echo htmlspecialchars($admin_photo); ?>" alt="Admin Photo" class="profile-icon" onerror="this.src='../assets/southern.png';">
+                        <img src="<?php echo htmlspecialchars($admin_photo); ?>" alt="Admin Photo" class="profile-icon" onerror="this.onerror=null; this.src='<?php echo htmlspecialchars($default_logo); ?>';">
                         <span class="online-dot"></span>
                     </div>
                     <h3>Admin</h3>
@@ -1100,7 +1113,7 @@ body:not(.light-mode) .teacher-info {
     <main class="main-content">
         <div class="top-hero">
             <div class="school-brand">
-                <img src="../assets/logo2.png" class="school-logo" alt="Logo" onerror="this.style.display='none';">
+                <img src="<?php echo htmlspecialchars($default_logo); ?>" class="school-logo" alt="SPIST Logo" onerror="this.onerror=null; this.style.display='none';">
                 <div>
                     <h1>SOUTHERN PHILIPPINES INSTITUTE OF SCIENCE AND TECHNOLOGY</h1>
                     <p>CLEARANCE COLLEGE DEPARTMENT</p>
@@ -1135,7 +1148,7 @@ body:not(.light-mode) .teacher-info {
 
                 <form method="POST" enctype="multipart/form-data" class="teacher-form">
                     <?php if ($edit_mode): ?>
-                        <input type="hidden" name="teacher_id" value="<?php echo $edit_teacher['id']; ?>">
+                        <input type="hidden" name="teacher_id" value="<?php echo intval($edit_teacher['id']); ?>">
                         <input type="hidden" name="old_photo" value="<?php echo htmlspecialchars($edit_teacher['teacher_photo']); ?>">
                     <?php endif; ?>
 
@@ -1163,14 +1176,21 @@ body:not(.light-mode) .teacher-info {
                         <label class="input-label">Teacher Photo <?php echo $edit_mode ? '(Optional - leave blank if no change)' : ''; ?></label>
 
                         <div class="upload-box">
-                            <?php if ($edit_mode && !empty($edit_teacher['teacher_photo']) && file_exists($upload_dir . $edit_teacher['teacher_photo'])): ?>
+                            <?php
+                                $preview_photo = "";
+                                if ($edit_mode && !empty($edit_teacher['teacher_photo']) && file_exists($upload_dir . $edit_teacher['teacher_photo'])) {
+                                    $preview_photo = $upload_dir . $edit_teacher['teacher_photo'];
+                                }
+                            ?>
+
+                            <?php if (!empty($preview_photo)): ?>
                                 <div class="current-preview">
-                                    <img src="<?php echo $upload_dir . htmlspecialchars($edit_teacher['teacher_photo']); ?>" alt="Current Photo">
+                                    <img src="<?php echo htmlspecialchars($preview_photo); ?>" alt="Current Photo" onerror="this.onerror=null; this.src='<?php echo htmlspecialchars($default_logo); ?>';">
                                 </div>
                             <?php endif; ?>
 
                             <input type="file" name="teacher_photo" accept=".jpg,.jpeg,.png,.webp">
-                            <div class="upload-note">Supported files: JPG, JPEG, PNG, WEBP</div>
+                            <div class="upload-note">Supported files: JPG, JPEG, PNG, WEBP. Leave blank to use SPIST logo.</div>
                         </div>
                     </div>
 
@@ -1192,9 +1212,9 @@ body:not(.light-mode) .teacher-info {
                     <div class="album-grid">
                         <?php while ($teacher = $teachers->fetch_assoc()): ?>
                             <?php
-                                $teacher_photo = (!empty($teacher['teacher_photo']) && file_exists($upload_dir . $teacher['teacher_photo']))
-                                    ? $upload_dir . $teacher['teacher_photo']
-                                    : "../assets/southern.png";
+                                $hasTeacherPhoto = (!empty($teacher['teacher_photo']) && file_exists($upload_dir . $teacher['teacher_photo']));
+                                $teacher_photo = $hasTeacherPhoto ? $upload_dir . $teacher['teacher_photo'] : $default_logo;
+                                $photo_class = $hasTeacherPhoto ? "teacher-photo" : "teacher-photo logo-fallback";
                             ?>
 
                             <div class="teacher-card">
@@ -1203,7 +1223,7 @@ body:not(.light-mode) .teacher-info {
                                 </div>
 
                                 <div class="teacher-photo-wrap">
-                                    <img src="<?php echo htmlspecialchars($teacher_photo); ?>" alt="Teacher Photo" class="teacher-photo" onerror="this.src='../assets/southern.png';">
+                                    <img src="<?php echo htmlspecialchars($teacher_photo); ?>" alt="Teacher Photo" class="<?php echo $photo_class; ?>" onerror="this.onerror=null; this.src='<?php echo htmlspecialchars($default_logo); ?>'; this.classList.add('logo-fallback');">
                                 </div>
 
                                 <div class="teacher-name">
@@ -1219,8 +1239,8 @@ body:not(.light-mode) .teacher-info {
                                 </div>
 
                                 <div class="card-actions">
-                                    <a href="admin_teacher_album.php?edit=<?php echo $teacher['id']; ?>" class="edit-btn">Edit</a>
-                                    <a href="admin_teacher_album.php?delete=<?php echo $teacher['id']; ?>" class="delete-btn" onclick="return confirm('Delete this teacher profile?')">Delete</a>
+                                    <a href="admin_teacher_album.php?edit=<?php echo intval($teacher['id']); ?>" class="edit-btn">Edit</a>
+                                    <a href="admin_teacher_album.php?delete=<?php echo intval($teacher['id']); ?>" class="delete-btn" onclick="return confirm('Delete this teacher profile?')">Delete</a>
                                 </div>
                             </div>
                         <?php endwhile; ?>

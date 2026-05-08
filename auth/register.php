@@ -11,6 +11,8 @@ $error   = isset($_GET['error']) ? $_GET['error'] : '';
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Create Account</title>
 
+<link rel="icon" type="image/png" href="../assets/logo2.png">
+
 <style>
 *{
     margin:0;
@@ -120,6 +122,20 @@ body.register-page{
     background:#ffe8e8;
     color:#b30000;
     border:1px solid #ffb3b3;
+}
+
+.auto-hide-message{
+    transition:opacity .4s ease, transform .4s ease, margin .4s ease, padding .4s ease;
+}
+
+.auto-hide-message.hide{
+    opacity:0;
+    transform:translateY(-8px);
+    pointer-events:none;
+    margin:0;
+    padding-top:0;
+    padding-bottom:0;
+    overflow:hidden;
 }
 
 .grid{
@@ -415,7 +431,7 @@ body.register-page{
 <p class="form-subtitle">Fill in your details to continue</p>
 
 <?php if(!empty($error)): ?>
-<div class="message-box message-error">
+<div class="message-box message-error auto-hide-message" id="registerMessage">
 <?php echo htmlspecialchars($error); ?>
 </div>
 <?php endif; ?>
@@ -449,7 +465,16 @@ placeholder="Enter school email"
 
 <div class="input-group">
 <label>Contact Number</label>
-<input type="text" name="contact_number" maxlength="11" required>
+<input
+type="tel"
+name="contact_number"
+id="contact_number"
+maxlength="11"
+inputmode="numeric"
+pattern="[0-9]*"
+placeholder="09XXXXXXXXX"
+required
+>
 </div>
 
 <div class="input-group password-group">
@@ -554,6 +579,32 @@ function toggleCourse(){
         course.required=false;
         course.value="";
     }
+}
+
+const contactInput = document.getElementById("contact_number");
+
+if (contactInput) {
+    contactInput.addEventListener("input", function () {
+        this.value = this.value.replace(/[^0-9]/g, "").slice(0, 11);
+    });
+
+    contactInput.addEventListener("keypress", function (e) {
+        if (!/[0-9]/.test(e.key)) {
+            e.preventDefault();
+        }
+    });
+}
+
+const registerMessage = document.getElementById("registerMessage");
+
+if (registerMessage) {
+    setTimeout(function () {
+        registerMessage.classList.add("hide");
+
+        setTimeout(function () {
+            registerMessage.remove();
+        }, 400);
+    }, 4000);
 }
 
 const emailInput=document.getElementById("email");

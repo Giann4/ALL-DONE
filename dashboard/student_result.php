@@ -89,6 +89,8 @@ $current_page = basename($_SERVER['PHP_SELF']);
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Student Result</title>
 
+<link rel="icon" type="image/png" href="../assets/logo2.png">
+
 <?php if (!empty($default_photo)): ?>
 <link rel="preload" as="image" href="<?php echo htmlspecialchars($default_photo); ?>">
 <?php endif; ?>

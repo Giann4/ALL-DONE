@@ -78,6 +78,8 @@ if ($admin_id > 0) {
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Admin Dashboard</title>
 
+<link rel="icon" type="image/png" href="../assets/logo2.png">
+
 <style>
 * {
     margin: 0;
