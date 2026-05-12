@@ -7,6 +7,8 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
     exit;
 }
 
+$is_super_admin = isset($_SESSION['admin_role']) && $_SESSION['admin_role'] === 'super_admin';
+
 $courseFilter = isset($_GET['course']) ? trim($_GET['course']) : '';
 $viewRole = isset($_GET['view']) ? trim($_GET['view']) : 'students';
 
@@ -21,6 +23,12 @@ if ($viewRole === 'students' && !empty($courseFilter)) {
     $returnUrl .= "&course=" . urlencode($courseFilter);
 }
 
+$top_logo = "../assets/logo2.png";
+if (!file_exists($top_logo)) {
+    $top_logo = "../assets/southern.png";
+}
+
+/* GET USERS */
 $sql = "SELECT * FROM users WHERE is_deleted = 0";
 $params = [];
 $types = "";
@@ -48,15 +56,19 @@ if (!empty($params)) {
 $stmt->execute();
 $result = $stmt->get_result();
 
+/* COUNTS */
 $totalStudentsQuery = $conn->query("SELECT COUNT(*) as total FROM users WHERE role='student' AND is_deleted = 0");
-$totalStudents = $totalStudentsQuery->fetch_assoc()['total'];
+$totalStudents = $totalStudentsQuery->fetch_assoc()['total'] ?? 0;
 
 $totalTeachersQuery = $conn->query("SELECT COUNT(*) as total FROM users WHERE role='teacher' AND is_deleted = 0");
-$totalTeachers = $totalTeachersQuery->fetch_assoc()['total'];
+$totalTeachers = $totalTeachersQuery->fetch_assoc()['total'] ?? 0;
 
+$totalCurrent = ($viewRole === 'students') ? $totalStudents : $totalTeachers;
+
+/* ADMIN INFO */
 $adminName = isset($_SESSION['name']) && !empty($_SESSION['name']) ? $_SESSION['name'] : 'Administrator';
 
-$default_admin_photo = "../assets/southern.png";
+$default_admin_photo = "../assets/logo2.png";
 $admin_photo = $default_admin_photo;
 $admin_id = isset($_SESSION['user_id']) ? intval($_SESSION['user_id']) : 0;
 
@@ -75,567 +87,471 @@ if ($admin_id > 0) {
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<title><?= ($viewRole === 'students') ? 'Student Management' : 'Teacher Management' ?></title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Admin Dashboard</title>
 
 <link rel="icon" type="image/png" href="../assets/logo2.png">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
 <style>
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    font-family: Arial, Helvetica, sans-serif;
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:'Segoe UI',sans-serif;
 }
 
-body {
-    background: #f4f7fb;
-    color: #102a33;
+body{
+    background:#07111f;
+    color:#e9f1ff;
 }
 
-.admin-wrapper {
-    display: flex;
-    min-height: 100vh;
-}
-
-.sidebar {
-    position: fixed;
-    inset: 0 auto 0 0;
-    width: 285px;
-    height: 100vh;
-    padding: 16px;
+body::before{
+    content:"";
+    position:fixed;
+    inset:0;
     background:
-        radial-gradient(circle at top left, rgba(32, 220, 126, 0.20), transparent 34%),
-        linear-gradient(180deg, #063946 0%, #03313c 52%, #021f29 100%);
-    color: #fff;
-    z-index: 1000;
-    overflow-y: auto;
-    box-shadow: 18px 0 45px rgba(0,0,0,0.24);
-    border-right: 1px solid rgba(255,255,255,0.12);
-}
-
-.sidebar-shell {
-    min-height: calc(100vh - 32px);
-    border: 1px solid rgba(255,255,255,0.18);
-    border-radius: 22px;
-    padding: 14px;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    background: rgba(255,255,255,0.035);
-}
-
-.brand-mini {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 8px 8px 16px;
-    border-bottom: 1px solid rgba(255,255,255,0.12);
-}
-
-.brand-icon {
-    width: 38px;
-    height: 38px;
-    border-radius: 13px;
-    background: linear-gradient(135deg, #13cf74, #8fbc67);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 21px;
-    box-shadow: 0 10px 20px rgba(18,201,107,0.28);
-}
-
-.brand-text {
-    font-size: 17px;
-    font-weight: 900;
-    letter-spacing: .4px;
-}
-
-.profile-box {
-    margin-top: 14px;
-    padding: 24px 16px 20px;
-    border-radius: 20px;
-    text-align: center;
-    background:
-        linear-gradient(180deg, rgba(255,255,255,0.12), rgba(255,255,255,0.05));
-    border: 1px solid rgba(255,255,255,0.13);
-    box-shadow: 0 18px 35px rgba(0,0,0,0.22);
-}
-
-.profile-icon-wrap {
-    width: 96px;
-    height: 96px;
-    margin: 0 auto 12px;
-    padding: 4px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #ffffff, #18d675);
-    position: relative;
-}
-
-.profile-icon {
-    width: 100%;
-    height: 100%;
-    border-radius: 50%;
-    border: 3px solid #ffffff;
-    object-fit: cover;
-    background: #fff;
-}
-
-.online-dot {
-    position: absolute;
-    width: 20px;
-    height: 20px;
-    right: 7px;
-    bottom: 8px;
-    background: #2edb79;
-    border: 3px solid #ffffff;
-    border-radius: 50%;
-}
-
-.profile-box h3 {
-    font-size: 22px;
-    font-weight: 900;
-    margin-bottom: 5px;
-}
-
-.profile-box p {
-    color: #23e986;
-    font-size: 13px;
-    font-weight: 800;
-    margin-bottom: 14px;
-}
-
-.admin-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
-    padding: 9px 18px;
-    border-radius: 999px;
-    border: 1px solid rgba(46,219,121,0.75);
-    color: #ffffff;
-    font-size: 12px;
-    font-weight: 900;
-    background: rgba(18,201,107,0.16);
-}
-
-.menu-label {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin: 20px 6px 12px;
-    color: #9fbfc5;
-    font-size: 11px;
-    font-weight: 900;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-}
-
-.menu-label::before,
-.menu-label::after {
-    content: "";
-    height: 1px;
-    background: rgba(255,255,255,0.13);
-    flex: 1;
-}
-
-.nav-group {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.side-btn {
-    width: 100%;
-    border: none;
-    outline: none;
-    text-decoration: none;
-    color: #f5ffff;
-    background: transparent;
-    padding: 13px 14px;
-    border-radius: 14px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    font-size: 14.5px;
-    font-weight: 900;
-    cursor: pointer;
-    transition: .22s ease;
-    position: relative;
-}
-
-.side-btn:hover {
-    background: rgba(255,255,255,0.08);
-    transform: translateX(4px);
-}
-
-.side-btn.active {
-    background: linear-gradient(135deg, #18cf74, #8fbc67);
-    box-shadow: 0 12px 24px rgba(18,201,107,0.28);
+        radial-gradient(circle at 15% 10%, rgba(124,58,237,.25), transparent 30%),
+        radial-gradient(circle at 90% 20%, rgba(37,99,235,.20), transparent 25%),
+        linear-gradient(135deg,#06101d,#0a1424,#07111f);
+    z-index:-1;
 }
 
-.side-icon {
-    width: 26px;
-    text-align: center;
-    font-size: 18px;
+/* SIDEBAR */
+.sidebar{
+    position:fixed;
+    top:0;
+    left:0;
+    width:255px;
+    height:100vh;
+    background:rgba(7,15,28,.86);
+    border-right:1px solid rgba(255,255,255,.10);
+    backdrop-filter:blur(18px);
+    padding:18px 14px;
+    overflow-y:auto;
 }
 
-.side-label {
-    flex: 1;
-    text-align: left;
-}
-
-.logout-btn {
-    margin-top: 20px;
-    background: rgba(255, 93, 87, 0.13);
-    color: #ff7474;
-    border: 1px solid rgba(255, 93, 87, 0.22);
+.brand{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    margin-bottom:22px;
 }
-
-.logout-btn:hover {
-    background: rgba(255, 93, 87, 0.24);
-    color: #ffffff;
-}
-
-.main-content {
-    flex: 1;
-    margin-left: 285px;
-    min-width: 0;
-}
-
-.top-hero {
-    background: linear-gradient(135deg, #079564 0%, #8fbc67 100%);
-    padding: 30px 34px;
-    color: #fff;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 18px;
-}
-
-.school-brand {
-    display: flex;
-    align-items: center;
-    gap: 18px;
-}
-
-.school-logo {
-    width: 58px;
-    height: 58px;
-    border-radius: 50%;
-    object-fit: cover;
-    background: #fff;
-    border: 3px solid rgba(255,255,255,0.78);
-    box-shadow: 0 10px 22px rgba(0,0,0,0.16);
+
+.brand img{
+    width:45px;
+    height:45px;
+    object-fit:contain;
+}
+
+.brand h2{
+    font-size:20px;
+    color:#fff;
+}
+
+.brand span{
+    font-size:11px;
+    color:#d7def0;
+    font-weight:700;
+}
+
+.super-card{
+    background:linear-gradient(135deg,#312e81,#6d28d9);
+    padding:15px;
+    border-radius:10px;
+    display:flex;
+    gap:13px;
+    align-items:center;
+    margin-bottom:24px;
+}
+
+.super-card img{
+    width:48px;
+    height:48px;
+    border-radius:50%;
+    object-fit:cover;
+    background:rgba(255,255,255,.10);
+    padding:2px;
+}
+
+.super-card h3{
+    font-size:14px;
+}
+
+.super-card p{
+    font-size:12px;
+    color:#d8d4ff;
+}
+
+.menu-title{
+    font-size:11px;
+    color:#8894aa;
+    margin:18px 0 10px;
+}
+
+.nav a{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:13px 12px;
+    margin-bottom:8px;
+    border-radius:7px;
+    color:#d7def0;
+    text-decoration:none;
+    font-size:14px;
+    transition:.2s;
 }
 
-.school-brand h1 {
-    font-size: 22px;
-    line-height: 1.2;
-    font-weight: 900;
-    letter-spacing: .3px;
+.nav a:hover,
+.nav a.active{
+    background:linear-gradient(135deg,#4c1d95,#5b21b6);
+    color:#fff;
 }
 
-.school-brand p {
-    margin-top: 6px;
-    font-size: 15px;
-    opacity: .95;
-    font-weight: 700;
+.nav a.logout{
+    color:#ff5d5d;
 }
 
-.darkmode-toggle {
-    height: 52px;
-    padding: 0 24px;
-    border: none;
-    border-radius: 14px;
-    color: #fff;
-    font-weight: 900;
-    cursor: pointer;
-    background: #063946;
-    box-shadow: 0 10px 20px rgba(0,0,0,0.20);
-    transition: .22s ease;
+.nav i{
+    width:20px;
 }
 
-.darkmode-toggle:hover {
-    transform: translateY(-2px);
+/* MAIN */
+.main{
+    margin-left:255px;
+    min-height:100vh;
 }
 
-.content-area {
-    padding: 28px;
+.topbar{
+    height:64px;
+    border-bottom:1px solid rgba(255,255,255,.10);
+    background:rgba(8,16,29,.70);
+    backdrop-filter:blur(14px);
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:0 22px;
 }
 
-.top-controls {
-    display: grid;
-    grid-template-columns: 1fr 370px 370px;
-    gap: 22px;
-    margin-bottom: 24px;
+.top-left{
+    display:flex;
+    align-items:center;
+    gap:15px;
 }
 
-.search-card {
-    display: flex;
-    align-items: center;
+.top-left i{
+    color:#c7d2fe;
+    font-size:20px;
 }
 
-.live-search-input {
-    width: 100%;
-    height: 70px;
-    border-radius: 18px;
-    border: 1px solid #dfe8ed;
-    background: #fff;
-    padding: 0 22px;
-    font-size: 15px;
-    outline: none;
-    box-shadow: 0 12px 30px rgba(21, 48, 66, 0.08);
+.topbar h1{
+    font-size:18px;
+    color:#fff;
 }
 
-.stat-card {
-    height: 112px;
-    border-radius: 20px;
-    background: #fff;
-    border: 1px solid #e5eef3;
-    box-shadow: 0 12px 30px rgba(21, 48, 66, 0.08);
-    padding: 20px;
-    display: flex;
-    align-items: center;
-    gap: 18px;
+.topbar h1 span{
+    color:#8b5cf6;
 }
 
-.stat-icon {
-    width: 66px;
-    height: 66px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #fff;
-    font-size: 28px;
-    box-shadow: 0 12px 24px rgba(0,0,0,0.16);
+.profile{
+    display:flex;
+    align-items:center;
+    gap:12px;
 }
 
-.stat-green {
-    background: linear-gradient(135deg, #13c870, #079564);
+.profile-icon{
+    width:42px;
+    height:42px;
+    border-radius:50%;
+    display:grid;
+    place-items:center;
+    background:linear-gradient(135deg,#7c3aed,#2563eb);
+    font-size:20px;
 }
 
-.stat-blue {
-    background: linear-gradient(135deg, #4fa6ff, #1677ff);
+.profile small{
+    color:#aab5ca;
 }
 
-.stat-card span {
-    font-size: 14px;
-    color: #456;
-    font-weight: 800;
+.content{
+    padding:18px;
 }
 
-.stat-card h2 {
-    font-size: 28px;
-    color: #243b4a;
-    margin: 4px 0;
+.page-head{
+    margin-bottom:18px;
 }
 
-.stat-card p {
-    color: #168a54;
-    font-size: 13px;
-    font-weight: 800;
+.breadcrumb{
+    font-size:13px;
+    color:#9ca3af;
+    margin-bottom:8px;
 }
 
-.table-card {
-    background: #fff;
-    border-radius: 22px;
-    padding: 18px;
-    box-shadow: 0 18px 42px rgba(21, 48, 66, 0.10);
-    border: 1px solid #e5eef3;
+.page-title{
+    font-size:28px;
+    color:#ffffff;
+    margin-bottom:5px;
 }
 
-.table-wrap {
-    overflow-x: auto;
-    border-radius: 16px;
-    border: 1px solid #e4ebef;
+.page-subtitle{
+    color:#9ca3af;
+    font-size:14px;
 }
 
-table {
-    width: 100%;
-    border-collapse: collapse;
-    min-width: 1020px;
-    background: #fff;
+/* CONTROLS */
+.controls{
+    display:grid;
+    grid-template-columns:1fr 220px 180px 180px;
+    gap:12px;
+    margin-bottom:16px;
 }
 
-thead th {
-    background: #eaf5ee;
-    color: #163743;
-    font-size: 13px;
-    font-weight: 900;
-    padding: 16px 14px;
-    text-align: center;
+.control-box{
+    background:rgba(255,255,255,.045);
+    border:1px solid rgba(255,255,255,.11);
+    border-radius:8px;
+    padding:14px;
+    box-shadow:0 12px 30px rgba(0,0,0,.22);
 }
 
-tbody td {
-    padding: 15px 14px;
-    border-top: 1px solid #e9eef2;
-    color: #425768;
-    text-align: center;
-    font-size: 14px;
-    vertical-align: middle;
+.search-input,
+select{
+    width:100%;
+    height:44px;
+    border-radius:7px;
+    border:1px solid rgba(255,255,255,.12);
+    background:rgba(255,255,255,.08);
+    color:#fff;
+    padding:0 13px;
+    outline:none;
 }
 
-tbody tr:hover td {
-    background: #fbfdfc;
+.search-input::placeholder{
+    color:#9ca3af;
 }
 
-.role-badge,
-.course-badge {
-    display: inline-block;
-    padding: 7px 14px;
-    border-radius: 999px;
-    font-size: 11px;
-    font-weight: 900;
+select option{
+    color:#111;
 }
 
-.role-student,
-.course-badge {
-    background: #dff5e8;
-    color: #0a944d;
+.filter-btn,
+.reset-btn{
+    width:100%;
+    height:44px;
+    border:none;
+    border-radius:7px;
+    color:white;
+    cursor:pointer;
+    font-weight:800;
+    text-decoration:none;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
 }
 
-.role-teacher {
-    background: #e7f1ff;
-    color: #1769c2;
+.filter-btn{
+    background:linear-gradient(135deg,#6d28d9,#2563eb);
 }
 
-.password-mask {
-    letter-spacing: 2px;
-    color: #566b7a;
-    font-weight: 900;
+.reset-btn{
+    background:#374151;
 }
 
-.action-group {
-    display: flex;
-    justify-content: center;
-    gap: 8px;
-    flex-wrap: wrap;
+/* STATS */
+.stats{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:16px;
+    margin-bottom:16px;
 }
 
-.action-btn {
-    width: 38px;
-    height: 38px;
-    border-radius: 11px;
-    text-decoration: none;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0;
-    font-weight: 900;
-    transition: .22s ease;
+.stat-card{
+    background:rgba(255,255,255,.055);
+    border:1px solid rgba(255,255,255,.10);
+    border-radius:8px;
+    padding:16px;
+    box-shadow:0 12px 30px rgba(0,0,0,.28);
+    display:flex;
+    align-items:center;
+    gap:15px;
 }
 
-.action-btn:hover {
-    transform: translateY(-2px);
+.stat-icon{
+    width:55px;
+    height:55px;
+    border-radius:8px;
+    display:grid;
+    place-items:center;
+    font-size:25px;
+    color:#fff;
 }
 
-.view-btn {
-    background: #e7f1ff;
-    color: #1677ff;
+.purple{background:linear-gradient(135deg,#6d28d9,#4f46e5);}
+.blue{background:linear-gradient(135deg,#1d4ed8,#2563eb);}
+.green{background:linear-gradient(135deg,#059669,#047857);}
+
+.stat-card h2{
+    font-size:28px;
+    color:#fff;
+}
+
+.stat-card p{
+    color:#cbd5e1;
+    font-size:13px;
+}
+
+/* TABLE */
+.panel{
+    background:rgba(255,255,255,.045);
+    border:1px solid rgba(255,255,255,.11);
+    border-radius:8px;
+    padding:16px;
+    box-shadow:0 12px 30px rgba(0,0,0,.28);
+}
+
+.panel-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:15px;
+}
+
+.panel h3{
+    color:#ffffff;
+    font-size:16px;
 }
 
-.view-btn::before {
-    content: "👁";
-    font-size: 15px;
+.table-wrap{
+    overflow-x:auto;
 }
 
-.edit-btn {
-    background: #fff3d8;
-    color: #d89b00;
+table{
+    width:100%;
+    border-collapse:collapse;
+    min-width:1000px;
 }
 
-.edit-btn::before {
-    content: "✏️";
-    font-size: 15px;
+th{
+    background:#111827;
+    color:#dbeafe;
+    padding:13px;
+    font-size:12px;
+    text-align:left;
+    border-bottom:1px solid rgba(255,255,255,.10);
 }
 
-.archive-btn {
-    background: #ffe5e5;
-    color: #ff3131;
+td{
+    padding:14px 13px;
+    border-bottom:1px solid rgba(255,255,255,.08);
+    color:#e5edff;
+    font-size:13px;
 }
 
-.archive-btn::before {
-    content: "🗑";
-    font-size: 15px;
+tbody tr:hover td{
+    background:rgba(255,255,255,.035);
 }
 
-.empty-row {
-    padding: 34px 10px;
-    color: #6b7479;
-    font-weight: 800;
+.user-name{
+    font-weight:800;
+    color:#fff;
 }
 
-/* DARK MODE */
-body.dark-mode {
-    background: #0f172a;
+.badge{
+    padding:6px 12px;
+    border-radius:20px;
+    font-size:11px;
+    font-weight:800;
+    display:inline-block;
 }
 
-body.dark-mode .top-hero {
-    background: linear-gradient(135deg, #033946, #6f9f4f);
+.role-student{
+    background:rgba(139,92,246,.18);
+    color:#c4b5fd;
 }
 
-body.dark-mode .content-area {
-    background: #0f172a;
+.role-teacher{
+    background:rgba(37,99,235,.18);
+    color:#bfdbfe;
 }
 
-body.dark-mode .live-search-input,
-body.dark-mode .stat-card,
-body.dark-mode .table-card {
-    background: #111827;
-    border-color: #243244;
-    color: #e5e7eb;
+.course-badge{
+    background:rgba(5,150,105,.18);
+    color:#8ff0c4;
 }
 
-body.dark-mode .stat-card h2,
-body.dark-mode .stat-card span {
-    color: #e5e7eb;
+.password-mask{
+    letter-spacing:2px;
+    color:#aab5ca;
+    font-weight:900;
 }
 
-body.dark-mode table,
-body.dark-mode tbody td {
-    background: #fff !important;
-    color: #425768 !important;
+.action-group{
+    display:flex;
+    gap:7px;
+    flex-wrap:wrap;
 }
 
-body.dark-mode thead th {
-    background: #eaf5ee !important;
-    color: #163743 !important;
+.action-btn{
+    width:34px;
+    height:34px;
+    border-radius:8px;
+    text-decoration:none;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    font-size:14px;
 }
+
+.view-btn{
+    background:rgba(37,99,235,.18);
+    color:#93c5fd;
+}
+
+.edit-btn{
+    background:rgba(234,179,8,.18);
+    color:#fde68a;
+}
+
+.archive-btn{
+    background:rgba(220,38,38,.18);
+    color:#ff9c9c;
+}
+
+.empty-row{
+    text-align:center;
+    color:#9ca3af;
+    padding:30px;
+}
+
+/* RESPONSIVE */
+@media(max-width:1100px){
+    .controls{
+        grid-template-columns:1fr;
+    }
 
-@media (max-width: 1200px) {
-    .top-controls {
-        grid-template-columns: 1fr;
+    .stats{
+        grid-template-columns:1fr;
     }
 }
 
-@media (max-width: 800px) {
-    .sidebar {
-        position: relative;
-        width: 100%;
-        height: auto;
+@media(max-width:800px){
+    .sidebar{
+        position:relative;
+        width:100%;
+        height:auto;
     }
 
-    .sidebar-shell {
-        min-height: auto;
+    .main{
+        margin-left:0;
     }
 
-    .main-content {
-        margin-left: 0;
-    }
-
-    .admin-wrapper {
-        flex-direction: column;
-    }
-
-    .top-hero {
-        flex-direction: column;
-        align-items: stretch;
-    }
-
-    .school-brand {
-        flex-direction: column;
-        text-align: center;
+    .topbar{
+        height:auto;
+        padding:15px;
+        flex-direction:column;
+        align-items:flex-start;
+        gap:12px;
     }
 }
 </style>
@@ -643,225 +559,333 @@ body.dark-mode thead th {
 
 <body>
 
-<div class="admin-wrapper">
-    <aside class="sidebar">
-        <div class="sidebar-shell">
-            <div>
-                <div class="brand-mini">
-                    <div class="brand-icon">🎓</div>
-                    <div class="brand-text">ADMIN PANEL</div>
-                </div>
+<aside class="sidebar">
+    <div class="brand">
+        <img src="<?= htmlspecialchars($top_logo) ?>" alt="Logo">
+        <div>
+            <h2>SPIST</h2>
+            <span>ONLINE CLEARANCE<br>MANAGEMENT SYSTEM</span>
+        </div>
+    </div>
 
-                <div class="profile-box">
-                    <div class="profile-icon-wrap">
-                        <img src="<?php echo htmlspecialchars($admin_photo); ?>" alt="Admin Profile" class="profile-icon" onerror="this.src='../assets/southern.png';">
-                        <span class="online-dot"></span>
-                    </div>
-                    <h3>Admin</h3>
-                    <p><?php echo htmlspecialchars($adminName); ?></p>
-                    <div class="admin-badge">🛡 ADMIN PANEL</div>
-                </div>
+    <div class="super-card">
+        <img src="<?= htmlspecialchars($admin_photo) ?>" alt="Admin" onerror="this.src='../assets/logo2.png';">
+        <div>
+            <h3><?= $is_super_admin ? 'SUPER ADMIN' : 'ADMIN' ?></h3>
+            <p><?= htmlspecialchars($adminName) ?></p>
+        </div>
+    </div>
 
-                <div class="menu-label">Main Navigation</div>
+    <div class="menu-title">MAIN NAVIGATION</div>
 
-                <div class="nav-group">
-                    <a class="side-btn <?php echo ($viewRole === 'teachers') ? 'active' : ''; ?>" href="admin.php?view=teachers">
-                        <span class="side-icon">👨‍🏫</span>
-                        <span class="side-label">List of Teachers</span>
-                    </a>
-
-                    <a class="side-btn <?php echo ($viewRole === 'students' && empty($courseFilter)) ? 'active' : ''; ?>" href="admin.php?view=students">
-                        <span class="side-icon">👥</span>
-                        <span class="side-label">List of Students</span>
-                    </a>
-
-                    <a class="side-btn <?php echo ($current_page === 'recently_deleted.php') ? 'active' : ''; ?>" href="recently_deleted.php">
-                        <span class="side-icon">🗑</span>
-                        <span class="side-label">Recently Deleted</span>
-                    </a>
-
-                    <a class="side-btn <?php echo ($current_page === 'admin_teacher_album.php') ? 'active' : ''; ?>" href="admin_teacher_album.php">
-                        <span class="side-icon">🖼</span>
-                        <span class="side-label">Teacher Album</span>
-                    </a>
-
-                    <a class="side-btn <?php echo ($current_page === 'admin_change_password.php') ? 'active' : ''; ?>" href="admin_change_password.php">
-                        <span class="side-icon">🔑</span>
-                        <span class="side-label">Change Password</span>
-                    </a>
-                </div>
-            </div>
-
-            <a class="side-btn logout-btn" href="../auth/logout.php">
-                <span class="side-icon">🚪</span>
-                <span class="side-label">Log Out</span>
+    <nav class="nav">
+        <?php if ($is_super_admin): ?>
+            <a href="super_admin.php">
+                <i class="fa-solid fa-house"></i> Dashboard
             </a>
-        </div>
-    </aside>
 
-    <main class="main-content">
-        <div class="top-hero">
-            <div class="school-brand">
-                <img src="../assets/logo2.png" class="school-logo" alt="Logo" onerror="this.style.display='none';">
+            <a href="manage_admins.php">
+                <i class="fa-solid fa-user-shield"></i> Admin Management
+            </a>
+
+            <a href="admin.php?view=students" class="<?= ($viewRole === 'students') ? 'active' : '' ?>">
+                <i class="fa-solid fa-users"></i> User Management
+            </a>
+
+            <a href="admin.php?view=teachers" class="<?= ($viewRole === 'teachers') ? 'active' : '' ?>">
+                <i class="fa-solid fa-chalkboard-user"></i> Teacher Management
+            </a>
+
+            <a href="activity_logs.php">
+                <i class="fa-solid fa-clipboard-list"></i> Activity Logs
+            </a>
+
+            <a href="reports.php">
+                <i class="fa-solid fa-chart-column"></i> Reports & Analytics
+            </a>
+
+            <a href="backup_restore.php">
+                <i class="fa-solid fa-database"></i> Backup & Restore
+            </a>
+
+            <a href="system_settings.php">
+                <i class="fa-solid fa-gear"></i> System Settings
+            </a>
+        <?php else: ?>
+            <a href="admin.php?view=students" class="<?= ($viewRole === 'students') ? 'active' : '' ?>">
+                <i class="fa-solid fa-users"></i> List of Students
+            </a>
+
+            <a href="admin.php?view=teachers" class="<?= ($viewRole === 'teachers') ? 'active' : '' ?>">
+                <i class="fa-solid fa-chalkboard-user"></i> List of Teachers
+            </a>
+
+            <a href="recently_deleted.php">
+                <i class="fa-solid fa-trash"></i> Recently Deleted
+            </a>
+
+            <a href="admin_teacher_album.php">
+                <i class="fa-solid fa-images"></i> Teacher Album
+            </a>
+        <?php endif; ?>
+    </nav>
+
+    <div class="menu-title">OTHER</div>
+
+    <nav class="nav">
+        <a href="admin_profile.php">
+            <i class="fa-solid fa-user"></i> Profile
+        </a>
+
+        <a href="admin_change_password.php">
+            <i class="fa-solid fa-lock"></i> Change Password
+        </a>
+
+        <a href="../auth/logout.php" class="logout">
+            <i class="fa-solid fa-right-from-bracket"></i> Logout
+        </a>
+    </nav>
+</aside>
+
+<main class="main">
+
+    <header class="topbar">
+        <div class="top-left">
+            <i class="fa-solid fa-bars"></i>
+            <h1>
+                <span><?= ($viewRole === 'students') ? 'STUDENT' : 'TEACHER' ?></span>
+                MANAGEMENT
+            </h1>
+        </div>
+
+        <div class="profile">
+            <div class="profile-icon">
+                <i class="fa-solid fa-user-shield"></i>
+            </div>
+            <div>
+                <strong><?= htmlspecialchars($adminName) ?></strong><br>
+                <small><?= $is_super_admin ? 'Super Admin' : 'Admin' ?></small>
+            </div>
+        </div>
+    </header>
+
+    <section class="content">
+
+        <div class="page-head">
+            <div class="breadcrumb">
+                Dashboard / <?= ($viewRole === 'students') ? 'Student Management' : 'Teacher Management' ?>
+            </div>
+
+            <h2 class="page-title">
+                <?= ($viewRole === 'students') ? 'Student Management' : 'Teacher Management' ?>
+            </h2>
+
+            <p class="page-subtitle">
+                View, search, edit, and archive <?= ($viewRole === 'students') ? 'student' : 'teacher' ?> accounts.
+            </p>
+        </div>
+
+        <form method="GET" class="controls">
+            <div class="control-box">
+                <input type="hidden" name="view" value="<?= htmlspecialchars($viewRole) ?>">
+                <input type="text" id="liveSearch" class="search-input" placeholder="Search users..." autocomplete="off">
+            </div>
+
+            <?php if ($viewRole === 'students'): ?>
+                <div class="control-box">
+                    <select name="course">
+                        <option value="">All Courses</option>
+                        <option value="BSIT 1" <?= ($courseFilter === 'BSIT 1') ? 'selected' : '' ?>>BSIT 1</option>
+                        <option value="BSIT 2" <?= ($courseFilter === 'BSIT 2') ? 'selected' : '' ?>>BSIT 2</option>
+                        <option value="BSIT 3" <?= ($courseFilter === 'BSIT 3') ? 'selected' : '' ?>>BSIT 3</option>
+                        <option value="BSIT 4" <?= ($courseFilter === 'BSIT 4') ? 'selected' : '' ?>>BSIT 4</option>
+                    </select>
+                </div>
+
+                <div class="control-box">
+                    <button type="submit" class="filter-btn">
+                        <i class="fa-solid fa-filter"></i> Filter
+                    </button>
+                </div>
+
+                <div class="control-box">
+                    <a href="admin.php?view=students" class="reset-btn">
+                        <i class="fa-solid fa-rotate-left"></i> Reset
+                    </a>
+                </div>
+            <?php else: ?>
+                <div class="control-box">
+                    <a href="admin.php?view=students" class="filter-btn">
+                        <i class="fa-solid fa-users"></i> Students
+                    </a>
+                </div>
+
+                <div class="control-box">
+                    <a href="admin.php?view=teachers" class="reset-btn">
+                        <i class="fa-solid fa-chalkboard-user"></i> Teachers
+                    </a>
+                </div>
+
+                <div class="control-box">
+                    <button type="button" class="filter-btn" onclick="document.getElementById('liveSearch').focus();">
+                        <i class="fa-solid fa-magnifying-glass"></i> Search
+                    </button>
+                </div>
+            <?php endif; ?>
+        </form>
+
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-icon purple">
+                    <i class="fa-solid fa-users"></i>
+                </div>
                 <div>
-                    <h1>SOUTHERN PHILIPPINES INSTITUTE OF SCIENCE AND TECHNOLOGY</h1>
-                    <p>CLEARANCE COLLEGE DEPARTMENT</p>
+                    <h2><?= number_format($totalStudents) ?></h2>
+                    <p>Total Students</p>
                 </div>
             </div>
 
-            <button type="button" class="darkmode-toggle" id="darkModeToggle" onclick="toggleDarkMode()">🌙 DARK MODE</button>
+            <div class="stat-card">
+                <div class="stat-icon blue">
+                    <i class="fa-solid fa-chalkboard-user"></i>
+                </div>
+                <div>
+                    <h2><?= number_format($totalTeachers) ?></h2>
+                    <p>Total Teachers</p>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon green">
+                    <i class="fa-solid fa-list"></i>
+                </div>
+                <div>
+                    <h2><?= number_format($totalCurrent) ?></h2>
+                    <p>Current View Records</p>
+                </div>
+            </div>
         </div>
 
-        <div class="content-area">
-            <div class="top-controls">
-                <div class="search-card">
-                    <input type="text" id="liveSearch" class="live-search-input" placeholder="🔍 Search users..." autocomplete="off">
-                </div>
-
-                <div class="stat-card">
-                    <div class="stat-icon stat-green">🎓</div>
-                    <div>
-                        <span>Total Students</span>
-                        <h2><?php echo $totalStudents; ?></h2>
-                        <p>Active students</p>
-                    </div>
-                </div>
-
-                <div class="stat-card">
-                    <div class="stat-icon stat-blue">👨‍🏫</div>
-                    <div>
-                        <span>Total Teachers</span>
-                        <h2><?php echo $totalTeachers; ?></h2>
-                        <p>Active teachers</p>
-                    </div>
-                </div>
+        <div class="panel">
+            <div class="panel-head">
+                <h3>
+                    <i class="fa-solid fa-table"></i>
+                    <?= ($viewRole === 'students') ? 'Student List' : 'Teacher List' ?>
+                </h3>
             </div>
 
-            <div class="table-card">
-                <div class="table-wrap">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>NAME</th>
-                                <th>EMAIL</th>
-                                <th>CONTACT</th>
-                                <th>PASSWORD</th>
-                                <?php if ($viewRole === 'students'): ?>
-                                    <th>COURSE</th>
-                                <?php endif; ?>
-                                <th>ROLE</th>
-                                <th>ACTIONS</th>
-                            </tr>
-                        </thead>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>NAME</th>
+                            <th>EMAIL</th>
+                            <th>CONTACT</th>
+                            <th>PASSWORD</th>
+                            <?php if ($viewRole === 'students'): ?>
+                                <th>COURSE</th>
+                            <?php endif; ?>
+                            <th>ROLE</th>
+                            <th>ACTIONS</th>
+                        </tr>
+                    </thead>
 
-                        <tbody id="usersTableBody">
-                            <?php if ($result->num_rows > 0): ?>
-                                <?php $display_id = 1; ?>
-                                <?php while($row = $result->fetch_assoc()): ?>
-                                    <?php
-                                        $search_text = strtolower(
-                                            $display_id . ' ' .
-                                            $row['id'] . ' ' .
-                                            $row['lastname'] . ' ' .
-                                            $row['firstname'] . ' ' .
-                                            $row['lastname'] . ', ' . $row['firstname'] . ' ' .
-                                            $row['email'] . ' ' .
-                                            $row['contact_number'] . ' ' .
-                                            $row['role'] . ' ' .
-                                            ($row['course'] ?? '')
-                                        );
-                                    ?>
+                    <tbody id="usersTableBody">
+                        <?php if ($result->num_rows > 0): ?>
+                            <?php $display_id = 1; ?>
+                            <?php while($row = $result->fetch_assoc()): ?>
+                                <?php
+                                    $search_text = strtolower(
+                                        $display_id . ' ' .
+                                        $row['id'] . ' ' .
+                                        $row['lastname'] . ' ' .
+                                        $row['firstname'] . ' ' .
+                                        $row['lastname'] . ', ' . $row['firstname'] . ' ' .
+                                        $row['email'] . ' ' .
+                                        $row['contact_number'] . ' ' .
+                                        $row['role'] . ' ' .
+                                        ($row['course'] ?? '')
+                                    );
+                                ?>
 
-                                    <tr class="searchable-row" data-search="<?php echo htmlspecialchars($search_text); ?>">
-                                        <td><?php echo $display_id; ?></td>
-                                        <td><?php echo htmlspecialchars($row['lastname'] . ', ' . $row['firstname']); ?></td>
-                                        <td><?php echo htmlspecialchars($row['email']); ?></td>
-                                        <td><?php echo htmlspecialchars($row['contact_number']); ?></td>
-                                        <td><span class="password-mask">••••••••</span></td>
+                                <tr class="searchable-row" data-search="<?= htmlspecialchars($search_text) ?>">
+                                    <td><?= $display_id ?></td>
 
-                                        <?php if ($viewRole === 'students'): ?>
-                                            <td>
-                                                <span class="course-badge"><?php echo htmlspecialchars($row['course']); ?></span>
-                                            </td>
-                                        <?php endif; ?>
+                                    <td>
+                                        <span class="user-name">
+                                            <?= htmlspecialchars($row['lastname'] . ', ' . $row['firstname']) ?>
+                                        </span>
+                                    </td>
 
+                                    <td><?= htmlspecialchars($row['email']) ?></td>
+
+                                    <td><?= htmlspecialchars($row['contact_number']) ?></td>
+
+                                    <td><span class="password-mask">••••••••</span></td>
+
+                                    <?php if ($viewRole === 'students'): ?>
                                         <td>
-                                            <span class="role-badge <?php echo ($row['role'] === 'student') ? 'role-student' : 'role-teacher'; ?>">
-                                                <?php echo strtoupper(htmlspecialchars($row['role'])); ?>
+                                            <span class="badge course-badge">
+                                                <?= htmlspecialchars($row['course']) ?>
                                             </span>
                                         </td>
+                                    <?php endif; ?>
 
-                                        <td>
-                                            <div class="action-group">
-                                                <?php if ($viewRole === 'students'): ?>
-                                                    <a href="view_user.php?id=<?php echo $row['id']; ?>&return=<?php echo urlencode($returnUrl); ?>" class="action-btn view-btn">VIEW</a>
-                                                <?php endif; ?>
+                                    <td>
+                                        <span class="badge <?= ($row['role'] === 'student') ? 'role-student' : 'role-teacher' ?>">
+                                            <?= strtoupper(htmlspecialchars($row['role'])) ?>
+                                        </span>
+                                    </td>
 
-                                                <a href="edit_user.php?id=<?php echo $row['id']; ?>&return=<?php echo urlencode($returnUrl); ?>" class="action-btn edit-btn">EDIT</a>
-
-                                                <a href="delete_user.php?id=<?php echo $row['id']; ?>&return=<?php echo urlencode($returnUrl); ?>"
-                                                   class="action-btn archive-btn"
-                                                   onclick="return confirm('Move this user to Recently Deleted?')">
-                                                   DELETE
+                                    <td>
+                                        <div class="action-group">
+                                            <?php if ($viewRole === 'students'): ?>
+                                                <a href="view_user.php?id=<?= $row['id'] ?>&return=<?= urlencode($returnUrl) ?>" class="action-btn view-btn" title="View">
+                                                    <i class="fa-solid fa-eye"></i>
                                                 </a>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    <?php $display_id++; ?>
-                                <?php endwhile; ?>
+                                            <?php endif; ?>
 
-                                <tr id="noSearchResultRow" style="display:none;">
-                                    <td colspan="<?php echo ($viewRole === 'students') ? '8' : '7'; ?>" class="empty-row">
-                                        No matching users found.
+                                            <a href="edit_user.php?id=<?= $row['id'] ?>&return=<?= urlencode($returnUrl) ?>" class="action-btn edit-btn" title="Edit">
+                                                <i class="fa-solid fa-pen-to-square"></i>
+                                            </a>
+
+                                            <a href="delete_user.php?id=<?= $row['id'] ?>&return=<?= urlencode($returnUrl) ?>"
+                                               class="action-btn archive-btn"
+                                               title="Archive"
+                                               onclick="return confirm('Move this user to Recently Deleted?')">
+                                               <i class="fa-solid fa-box-archive"></i>
+                                            </a>
+                                        </div>
                                     </td>
                                 </tr>
-                            <?php else: ?>
-                                <tr>
-                                    <td colspan="<?php echo ($viewRole === 'students') ? '8' : '7'; ?>" class="empty-row">
-                                        No records found.
-                                    </td>
-                                </tr>
-                            <?php endif; ?>
-                        </tbody>
-                    </table>
-                </div>
+
+                                <?php $display_id++; ?>
+                            <?php endwhile; ?>
+
+                            <tr id="noSearchResultRow" style="display:none;">
+                                <td colspan="<?= ($viewRole === 'students') ? '8' : '7' ?>" class="empty-row">
+                                    No matching users found.
+                                </td>
+                            </tr>
+                        <?php else: ?>
+                            <tr>
+                                <td colspan="<?= ($viewRole === 'students') ? '8' : '7' ?>" class="empty-row">
+                                    No records found.
+                                </td>
+                            </tr>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
             </div>
         </div>
-    </main>
-</div>
+
+    </section>
+
+</main>
 
 <script>
-function applyDarkModeState() {
-    const isDark = localStorage.getItem('site_darkmode') === 'enabled';
-    const btn = document.getElementById('darkModeToggle');
-
-    if (isDark) {
-        document.body.classList.add('dark-mode');
-        if (btn) btn.innerHTML = '☀️ LIGHT MODE';
-    } else {
-        document.body.classList.remove('dark-mode');
-        if (btn) btn.innerHTML = '🌙 DARK MODE';
-    }
-}
-
-function toggleDarkMode() {
-    const isDark = document.body.classList.contains('dark-mode');
-
-    if (isDark) {
-        document.body.classList.remove('dark-mode');
-        localStorage.setItem('site_darkmode', 'disabled');
-    } else {
-        document.body.classList.add('dark-mode');
-        localStorage.setItem('site_darkmode', 'enabled');
-    }
-
-    applyDarkModeState();
-}
-
 document.addEventListener('DOMContentLoaded', function() {
-    applyDarkModeState();
-
     const searchInput = document.getElementById("liveSearch");
     const rows = document.querySelectorAll(".searchable-row");
     const noSearchResultRow = document.getElementById("noSearchResultRow");

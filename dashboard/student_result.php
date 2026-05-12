@@ -2,7 +2,7 @@
 session_start();
 include("../config/db.php");
 
-if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'student') {
+if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'student' || !isset($_SESSION['user_id'])) {
     header("Location: ../auth/login.php");
     exit;
 }
@@ -21,7 +21,7 @@ function safe_image($path, $fallback = "../assets/southern.png") {
     return "";
 }
 
-$user_stmt = $conn->prepare("SELECT firstname, lastname, email, contact_number, course, profile_photo FROM users WHERE id = ?");
+$user_stmt = $conn->prepare("SELECT firstname, lastname, email, contact_number, course, profile_photo FROM users WHERE id = ? AND role = 'student'");
 $user_stmt->bind_param("i", $student_id);
 $user_stmt->execute();
 $user = $user_stmt->get_result()->fetch_assoc();
@@ -52,7 +52,8 @@ $stmt = $conn->prepare("
     FROM class_requests cr
     LEFT JOIN teacher_classes tc ON cr.class_id = tc.id
     LEFT JOIN users u ON tc.teacher_id = u.id
-    WHERE cr.student_id = ? AND cr.status = 'Reviewed'
+    WHERE cr.student_id = ? 
+      AND cr.status = 'Reviewed'
     ORDER BY cr.id DESC
 ");
 $stmt->bind_param("i", $student_id);
@@ -90,14 +91,6 @@ $current_page = basename($_SERVER['PHP_SELF']);
 <title>Student Result</title>
 
 <link rel="icon" type="image/png" href="../assets/logo2.png">
-
-<?php if (!empty($default_photo)): ?>
-<link rel="preload" as="image" href="<?php echo htmlspecialchars($default_photo); ?>">
-<?php endif; ?>
-
-<?php if (!empty($top_header_logo)): ?>
-<link rel="preload" as="image" href="<?php echo htmlspecialchars($top_header_logo); ?>">
-<?php endif; ?>
 
 <script>
 (function () {
@@ -937,16 +930,22 @@ body{
 
 @media print{
     @page{
-        size:A4 portrait;
-        margin:10mm;
+        margin:6mm;
     }
 
-    body{
+    html, body{
         background:#fff !important;
+        overflow:hidden !important;
     }
 
     body *{
         visibility:hidden;
+    }
+
+    .wrapper,
+    .sidebar,
+    .main-content{
+        display:none !important;
     }
 
     #printLayout,
@@ -956,164 +955,214 @@ body{
 
     #printLayout{
         display:block !important;
-        position:absolute;
-        left:0;
-        top:0;
+        position:fixed;
+        inset:0;
         width:100%;
-        background:#fff;
+        background:#fff !important;
     }
 
     .print-paper{
         width:100%;
-        max-width:760px;
-        margin:0 auto;
-        color:#000;
-        padding:0;
-        font-family:Arial, sans-serif;
+        max-width:100%;
+        min-height:calc(100vh - 12mm);
+        border:2px solid #000;
+        padding:8mm;
+        color:#000 !important;
+        background:#fff !important;
+        font-family:Arial, Helvetica, sans-serif;
+        zoom:.78;
     }
 
-    .print-top-mini{
-        display:flex;
-        justify-content:space-between;
-        font-size:10px;
-        margin-bottom:10px;
-    }
-
-    .print-header-top{
+    .print-header-main{
         display:grid;
-        grid-template-columns:90px 1fr 90px;
+        grid-template-columns:26mm 1fr 26mm;
         align-items:center;
-        gap:12px;
-        margin-bottom:10px;
-    }
-
-    .print-logo-box{
-        display:flex;
-        justify-content:center;
-        align-items:center;
+        gap:6mm;
+        text-align:center;
     }
 
     .print-logo{
-        width:78px;
-        height:78px;
+        width:22mm;
+        height:22mm;
         object-fit:contain;
         display:block;
+        margin:0 auto;
     }
 
-    .print-header-text{
-        text-align:center;
-        line-height:1.15;
-    }
-
-    .print-header-text h1{
-        font-size:20px;
+    .print-school-info h1{
+        font-size:15px;
+        line-height:1.05;
         font-weight:900;
-        margin:0 0 6px;
         text-transform:uppercase;
+        margin:0;
+        letter-spacing:.5px;
         color:#000 !important;
     }
 
-    .print-address{
+    .print-school-info p{
         font-size:11px;
+        margin:3mm 0 0;
         color:#000 !important;
     }
 
-    .print-double-line span{
-        display:block;
-        height:3px;
-        background:#2aa66a !important;
-        margin:3px 0;
-        -webkit-print-color-adjust:exact;
-        print-color-adjust:exact;
+    .print-school-info h2{
+        font-size:17px;
+        font-weight:900;
+        margin:3mm 0 0;
+        letter-spacing:.8px;
+        color:#000 !important;
     }
 
-    .print-subhead-left{
-        margin:12px 0 8px;
+    .print-school-info span{
+        font-size:13px;
+        font-weight:900;
+        color:#000 !important;
     }
 
-    .print-subhead-left h3{
-        font-size:14px;
-        margin:0 0 2px;
-        font-weight:800;
+    .print-double-line{
+        border-top:2px solid #000;
+        border-bottom:1px solid #000;
+        height:4px;
+        margin:5mm 0;
     }
 
-    .print-subhead-left p{
-        font-size:11px;
-        margin:0;
+    .student-info-area{
+        font-size:13px;
+        font-weight:700;
+        margin-bottom:4mm;
+        color:#000 !important;
     }
 
-    .print-center-title{
-        text-align:center;
-        margin:8px 0 12px;
-    }
-
-    .print-center-title h2{
-        font-size:16px;
-        margin:0 0 4px;
-        font-weight:800;
-    }
-
-    .print-center-title p{
-        margin:0;
-        font-size:11px;
-    }
-
-    .print-info-grid{
+    .student-info-row{
         display:grid;
         grid-template-columns:1fr 1fr;
-        gap:8px;
-        margin-bottom:12px;
+        gap:8mm;
+        margin-bottom:3mm;
     }
 
-    .print-info-box{
-        border:1px solid #000;
-        text-align:center;
-        padding:10px 8px;
-        min-height:54px;
-    }
-
-    .print-info-box span{
-        display:block;
-        font-size:10px;
-        margin-bottom:4px;
-        color:#444;
-        font-weight:700;
-    }
-
-    .print-info-box strong{
-        font-size:12px;
-        font-weight:800;
-    }
-
-    .print-message{
-        text-align:center;
-        font-size:11px;
-        line-height:1.5;
-        margin:10px auto 14px;
-        max-width:92%;
-    }
-
-    .print-result-table{
-        width:100%;
-        border-collapse:collapse;
-        font-size:10px;
-    }
-
-    .print-result-table th,
-    .print-result-table td{
-        border:1px solid #000;
-        padding:5px 4px;
-        text-align:center;
-        vertical-align:middle;
-        background:#fff !important;
+    .student-info-item{
+        border-bottom:2px solid #000;
+        padding:0 1mm 2mm;
         color:#000 !important;
     }
 
-    .print-result-table th{
-        font-weight:800;
+    .student-info-item strong{
+        font-size:14px;
+        font-weight:900;
+        color:#000 !important;
+    }
+
+    .clearance-wrapper{
+        display:grid;
+        grid-template-columns:1fr 1fr;
+        gap:6mm;
+        align-items:start;
+    }
+
+    .clearance-table{
+        width:100%;
+        border-collapse:collapse;
+        font-size:11px;
+        margin-bottom:6mm;
+        color:#000 !important;
+    }
+
+    .clearance-table th,
+    .clearance-table td{
+        border:1.5px solid #000;
+        padding:2.3mm;
+        color:#000 !important;
+        background:#fff !important;
+        vertical-align:middle;
+    }
+
+    .clearance-table th{
+        font-weight:900;
+        text-align:center;
+    }
+
+    .section-header{
+        text-align:left !important;
+        font-size:14px !important;
+        font-weight:900 !important;
         background:#f3f3f3 !important;
+        padding:3mm !important;
+        text-transform:uppercase;
         -webkit-print-color-adjust:exact;
         print-color-adjust:exact;
+    }
+
+    .subject-table td:nth-child(1){
+        width:50%;
+        text-align:left;
+    }
+
+    .subject-table td:nth-child(2),
+    .subject-table td:nth-child(3){
+        width:25%;
+        text-align:center;
+    }
+
+    .property-table td:nth-child(1){
+        width:48%;
+        text-align:left;
+    }
+
+    .property-table td:nth-child(2),
+    .property-table td:nth-child(3){
+        width:26%;
+    }
+
+    .manual-box{
+        border:1.5px solid #000;
+        padding:4mm;
+        margin-bottom:6mm;
+        font-size:12px;
+        page-break-inside:avoid !important;
+        color:#000 !important;
+    }
+
+    .manual-box h3{
+        font-size:14px;
+        font-weight:900;
+        margin:0 0 5mm;
+        color:#000 !important;
+    }
+
+    .manual-line{
+        margin-bottom:4mm;
+        min-height:5mm;
+        color:#000 !important;
+    }
+
+    .manual-signature{
+        text-align:center;
+        margin-top:7mm;
+        font-size:11px;
+        line-height:1.35;
+        color:#000 !important;
+    }
+
+    .student-cert{
+        min-height:32mm;
+    }
+
+    .final-validation{
+        min-height:38mm;
+    }
+
+    .print-footer{
+        margin-top:5mm;
+        border-top:3px solid #000;
+        padding-top:3mm;
+        text-align:center;
+        font-size:10px;
+        line-height:1.4;
+        color:#000 !important;
+    }
+
+    table, tr, td, th, .manual-box{
+        page-break-inside:avoid !important;
     }
 }
 </style>
@@ -1396,113 +1445,187 @@ body{
 
 <div id="printLayout">
     <div class="print-paper">
-        <div class="print-top-mini">
-            <span><?php echo date("n/j/y, g:i A"); ?></span>
-            <span>Student Result</span>
+
+        <div class="print-header-main">
+            <div>
+                <img 
+                    src="<?php echo htmlspecialchars($left_logo); ?>" 
+                    class="print-logo"
+                    onerror="this.onerror=null;this.src='../assets/southern.png';"
+                >
+            </div>
+
+            <div class="print-school-info">
+                <h1>SOUTHERN PHILIPPINES INSTITUTE OF SCIENCE &<br>TECHNOLOGY</h1>
+                <p>Tia Maria Bldg. E. Aguinaldo Highway, Anabu 2A, Imus City, Cavite, 4103</p>
+                <h2>STUDENT CLEARANCE</h2>
+                <span>College Department</span>
+            </div>
+
+            <div>
+                <img 
+                    src="<?php echo htmlspecialchars($right_logo); ?>" 
+                    class="print-logo"
+                    onerror="this.onerror=null;this.src='../assets/southern.png';"
+                >
+            </div>
         </div>
 
-        <div class="print-header">
-            <div class="print-header-top">
-                <div class="print-logo-box">
-                    <img 
-                        src="<?php echo htmlspecialchars($left_logo); ?>" 
-                        alt="Left Logo" 
-                        class="print-logo"
-                        onerror="this.onerror=null;this.src='../assets/southern.png';"
-                    >
+        <div class="print-double-line"></div>
+
+        <div class="student-info-area">
+            <div class="student-info-row">
+                <div class="student-info-item">
+                    <strong>NAME:</strong>
+                    <?php echo htmlspecialchars($full_name); ?>
                 </div>
 
-                <div class="print-header-text">
-                    <h1>SOUTHERN PHILIPPINES INSTITUTE<br>OF SCIENCE AND TECHNOLOGY</h1>
-                    <p class="print-address">Tia Maria Bldg. E. Aguinaldo Highway, Anabu 2A, Imus City, Cavite, 4103</p>
-                </div>
-
-                <div class="print-logo-box">
-                    <img 
-                        src="<?php echo htmlspecialchars($right_logo); ?>" 
-                        alt="Right Logo" 
-                        class="print-logo"
-                        onerror="this.onerror=null;this.src='../assets/southern.png';"
-                    >
+                <div class="student-info-item">
+                    <strong>Semester/Summer:</strong>
+                    1ST
                 </div>
             </div>
 
-            <div class="print-double-line">
-                <span></span>
-                <span></span>
+            <div class="student-info-row">
+                <div class="student-info-item">
+                    <strong>School Year:</strong>
+                    2025-2026
+                </div>
+
+                <div class="student-info-item">
+                    <strong>Course/Year Level:</strong>
+                    <?php echo htmlspecialchars($user['course'] ?: 'N/A'); ?>
+                </div>
             </div>
         </div>
 
-        <div class="print-subhead-left">
-            <h3>Student Clearance Result</h3>
-            <p>Printable academic clearance record</p>
-        </div>
+        <div class="clearance-wrapper">
 
-        <div class="print-center-title">
-            <h2>Student Clearance</h2>
-            <p>College Department</p>
-            <p>School Year 2025-2026</p>
-        </div>
-
-        <div class="print-info-grid">
-            <div class="print-info-box">
-                <span>Name</span>
-                <strong><?php echo htmlspecialchars($full_name); ?></strong>
-            </div>
-            <div class="print-info-box">
-                <span>Course</span>
-                <strong><?php echo htmlspecialchars($user['course'] ?: 'N/A'); ?></strong>
-            </div>
-            <div class="print-info-box">
-                <span>Email</span>
-                <strong><?php echo htmlspecialchars($user['email']); ?></strong>
-            </div>
-            <div class="print-info-box">
-                <span>Contact</span>
-                <strong><?php echo htmlspecialchars($user['contact_number'] ?: 'N/A'); ?></strong>
-            </div>
-        </div>
-
-        <div class="print-message">
-            Good day. I would like to respectfully request clearance for this semester. I have completed all required academic responsibilities. If there are remaining requirements or concerns, please let me know so I can comply immediately.
-        </div>
-
-        <table class="print-result-table">
-            <thead>
-                <tr>
-                    <th>#</th>
-                    <th>Subject</th>
-                    <th>Instructor</th>
-                    <th>Comment</th>
-                    <th>Status</th>
-                    <th>Date Signed</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php if (count($rows) > 0): ?>
-                    <?php foreach ($rows as $index => $row): ?>
-                        <tr>
-                            <td><?php echo $index + 1; ?></td>
-                            <td><?php echo htmlspecialchars($row['subject']); ?></td>
-                            <td><?php echo htmlspecialchars($row['instructor_name'] ?: 'N/A'); ?></td>
-                            <td><?php echo htmlspecialchars($row['comment'] ?: 'No comment'); ?></td>
-                            <td><?php echo htmlspecialchars($row['result']); ?></td>
-                            <td>
-                                <?php
-                                echo !empty($row['date_signed'])
-                                    ? date("F d, Y", strtotime($row['date_signed']))
-                                    : 'N/A';
-                                ?>
-                            </td>
-                        </tr>
-                    <?php endforeach; ?>
-                <?php else: ?>
+            <div>
+                <table class="clearance-table subject-table">
                     <tr>
-                        <td colspan="6">No reviewed results yet.</td>
+                        <th colspan="3" class="section-header">A. Subject/s</th>
                     </tr>
-                <?php endif; ?>
-            </tbody>
-        </table>
+                    <tr>
+                        <th>Subject/s</th>
+                        <th>Remarks</th>
+                        <th>Date</th>
+                    </tr>
+
+                    <?php if (count($rows) > 0): ?>
+                        <?php foreach ($rows as $row): ?>
+                            <tr>
+                                <td><?php echo htmlspecialchars($row['subject']); ?></td>
+                                <td><?php echo htmlspecialchars($row['result']); ?></td>
+                                <td>
+                                    <?php
+                                    echo !empty($row['date_signed'])
+                                        ? date("m-d-y", strtotime($row['date_signed']))
+                                        : '';
+                                    ?>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <tr>
+                            <td colspan="3">No reviewed subjects.</td>
+                        </tr>
+                    <?php endif; ?>
+                </table>
+
+                <div class="manual-box">
+                    <h3>B. Dean's Office</h3>
+                    <div class="manual-line">Remarks: _________________________________</div>
+                    <div class="manual-signature">
+                        ______________________________<br>
+                        College Dean
+                    </div>
+                </div>
+
+                <div class="manual-box">
+                    <h3>C. OSA / OSAS</h3>
+                    <div class="manual-line">OJT: _____________________________________</div>
+                    <div class="manual-line">Others: _________________________________</div>
+                    <div class="manual-signature">
+                        ______________________________<br>
+                        OSAS Officer
+                    </div>
+                </div>
+
+                <div class="manual-box">
+                    <h3>D. Registrar's Office</h3>
+                    <div class="manual-line">Birth Cert: ______________________________</div>
+                    <div class="manual-line">F-137: ___________________________________</div>
+                    <div class="manual-line">TOR: _____________________________________</div>
+                    <div class="manual-line">Inc Grades: _____________________________</div>
+                    <div class="manual-line">Remarks: _______________________________</div>
+                    <div class="manual-signature">
+                        ______________________________<br>
+                        Registrar Staff
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <table class="clearance-table property-table">
+                    <tr>
+                        <th colspan="3" class="section-header">I. Property Section</th>
+                    </tr>
+                    <tr>
+                        <th>Section</th>
+                        <th>Signature</th>
+                        <th>Date</th>
+                    </tr>
+
+                    <tr><td>Computer Lab</td><td></td><td></td></tr>
+                    <tr><td>Electronics Lab</td><td></td><td></td></tr>
+                    <tr><td>Chem/Physics</td><td></td><td></td></tr>
+                    <tr><td>Tools/Equipment</td><td></td><td></td></tr>
+                    <tr><td>HRM Lab</td><td></td><td></td></tr>
+                    <tr><td>Nursing/Caregiver</td><td></td><td></td></tr>
+                    <tr><td>LIBRARY</td><td></td><td></td></tr>
+                    <tr><td>Canteen</td><td></td><td></td></tr>
+                </table>
+
+                <div class="manual-box">
+                    <h3>II. Finance Section</h3>
+                    <div class="manual-line">Tuition Fee: _____________________________</div>
+                    <div class="manual-line">Other School Fees: ______________________</div>
+                    <div class="manual-line">Graduation Fee: _________________________</div>
+                    <div class="manual-line">Remarks: _______________________________</div>
+                    <div class="manual-signature">
+                        ______________________________<br>
+                        Cashier / Finance Officer
+                    </div>
+                </div>
+
+                <div class="manual-box student-cert">
+                    <h3>Student Certification</h3>
+                    <div class="manual-line">I certify that the information above is true and correct.</div>
+                    <div class="manual-signature">
+                        ______________________________<br>
+                        Student Signature
+                    </div>
+                </div>
+
+                <div class="manual-box final-validation">
+                    <h3>Final Validation</h3>
+                    <div class="manual-line">Date Released: __________________________</div>
+                    <div class="manual-line">Control No.: ____________________________</div>
+                    <div class="manual-signature">
+                        ______________________________<br>
+                        Authorized Personnel
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="print-footer">
+            This clearance form is generated from the Online Clearance Management System.<br>
+            Subject/s are system-generated; other offices/sections are for manual verification and signature.
+        </div>
+
     </div>
 </div>
 
@@ -1572,7 +1695,7 @@ function downloadAsImage() {
         tempWrapper.style.position = 'absolute';
         tempWrapper.style.left = '-99999px';
         tempWrapper.style.top = '0';
-        tempWrapper.style.width = '900px';
+        tempWrapper.style.width = '1200px';
         tempWrapper.style.background = '#ffffff';
         tempWrapper.style.padding = '20px';
         tempWrapper.style.zIndex = '-1';
@@ -1580,133 +1703,176 @@ function downloadAsImage() {
         tempWrapper.innerHTML = `
             <style>
                 .print-paper{
-                    width:100%;
-                    max-width:760px;
-                    margin:0 auto;
+                    width:1100px;
+                    border:2px solid #000;
+                    padding:35px;
                     color:#000;
-                    padding:0;
                     background:#fff;
-                    font-family:Arial, sans-serif;
+                    font-family:Arial, Helvetica, sans-serif;
                 }
-                .print-top-mini{
-                    display:flex;
-                    justify-content:space-between;
-                    font-size:10px;
-                    margin-bottom:10px;
-                }
-                .print-header-top{
+
+                .print-header-main{
                     display:grid;
-                    grid-template-columns:90px 1fr 90px;
+                    grid-template-columns:110px 1fr 110px;
                     align-items:center;
-                    gap:12px;
-                    margin-bottom:10px;
+                    gap:25px;
+                    text-align:center;
                 }
-                .print-logo-box{
-                    display:flex;
-                    justify-content:center;
-                    align-items:center;
-                }
+
                 .print-logo{
-                    width:78px;
-                    height:78px;
+                    width:95px;
+                    height:95px;
                     object-fit:contain;
                     display:block;
+                    margin:0 auto;
                 }
-                .print-header-text{
-                    text-align:center;
-                    line-height:1.15;
-                }
-                .print-header-text h1{
-                    font-size:20px;
+
+                .print-school-info h1{
+                    font-size:26px;
+                    line-height:1.05;
                     font-weight:900;
-                    margin:0 0 6px;
                     text-transform:uppercase;
-                    letter-spacing:0.3px;
-                }
-                .print-address{
-                    font-size:11px;
                     margin:0;
-                    line-height:1.3;
+                    letter-spacing:.5px;
+                    color:#000;
                 }
-                .print-double-line span{
-                    display:block;
-                    height:3px;
-                    background:#2aa66a;
-                    margin:3px 0;
-                }
-                .print-subhead-left{
-                    margin:12px 0 8px;
-                }
-                .print-subhead-left h3{
+
+                .print-school-info p{
                     font-size:14px;
-                    margin:0 0 2px;
-                    font-weight:800;
+                    margin:14px 0 0;
+                    color:#000;
                 }
-                .print-subhead-left p{
-                    font-size:11px;
-                    margin:0;
+
+                .print-school-info h2{
+                    font-size:30px;
+                    font-weight:900;
+                    margin:14px 0 0;
+                    letter-spacing:.8px;
+                    color:#000;
                 }
-                .print-center-title{
-                    text-align:center;
-                    margin:8px 0 12px;
-                }
-                .print-center-title h2{
+
+                .print-school-info span{
                     font-size:16px;
-                    margin:0 0 4px;
-                    font-weight:800;
+                    font-weight:900;
+                    color:#000;
                 }
-                .print-center-title p{
-                    margin:0;
-                    font-size:11px;
-                    line-height:1.4;
+
+                .print-double-line{
+                    border-top:2px solid #000;
+                    border-bottom:1px solid #000;
+                    height:4px;
+                    margin:22px 0;
                 }
-                .print-info-grid{
+
+                .student-info-area{
+                    font-size:16px;
+                    font-weight:700;
+                    margin-bottom:16px;
+                    color:#000;
+                }
+
+                .student-info-row{
                     display:grid;
                     grid-template-columns:1fr 1fr;
-                    gap:8px;
-                    margin-bottom:12px;
+                    gap:35px;
+                    margin-bottom:14px;
                 }
-                .print-info-box{
-                    border:1px solid #000;
-                    text-align:center;
-                    padding:10px 8px;
-                    min-height:54px;
+
+                .student-info-item{
+                    border-bottom:2px solid #000;
+                    padding:0 5px 8px;
+                    color:#000;
                 }
-                .print-info-box span{
-                    display:block;
-                    font-size:10px;
-                    margin-bottom:4px;
-                    color:#444;
-                    font-weight:700;
+
+                .student-info-item strong{
+                    font-size:17px;
+                    font-weight:900;
+                    color:#000;
                 }
-                .print-info-box strong{
-                    font-size:12px;
-                    font-weight:800;
+
+                .clearance-wrapper{
+                    display:grid;
+                    grid-template-columns:1fr 1fr;
+                    gap:25px;
+                    align-items:start;
                 }
-                .print-message{
-                    text-align:center;
-                    font-size:11px;
-                    line-height:1.5;
-                    margin:10px auto 14px;
-                    max-width:92%;
-                }
-                .print-result-table{
+
+                .clearance-table{
                     width:100%;
                     border-collapse:collapse;
-                    font-size:10px;
+                    font-size:14px;
+                    margin-bottom:25px;
+                    color:#000;
                 }
-                .print-result-table th,
-                .print-result-table td{
-                    border:1px solid #000;
-                    padding:5px 4px;
-                    text-align:center;
+
+                .clearance-table th,
+                .clearance-table td{
+                    border:1.5px solid #000;
+                    padding:10px;
+                    color:#000;
+                    background:#fff;
                     vertical-align:middle;
-                    background:#fff !important;
-                    color:#000 !important;
                 }
-                .print-result-table th{
-                    font-weight:800;
+
+                .clearance-table th{
+                    font-weight:900;
+                    text-align:center;
+                }
+
+                .section-header{
+                    text-align:left !important;
+                    font-size:17px !important;
+                    font-weight:900 !important;
                     background:#f3f3f3 !important;
+                    padding:12px !important;
+                    text-transform:uppercase;
+                }
+
+                .manual-box{
+                    border:1.5px solid #000;
+                    padding:18px;
+                    margin-bottom:25px;
+                    font-size:15px;
+                    color:#000;
+                }
+
+                .manual-box h3{
+                    font-size:17px;
+                    font-weight:900;
+                    margin:0 0 22px;
+                    color:#000;
+                }
+
+                .manual-line{
+                    margin-bottom:18px;
+                    min-height:22px;
+                    color:#000;
+                }
+
+                .manual-signature{
+                    text-align:center;
+                    margin-top:30px;
+                    font-size:14px;
+                    line-height:1.35;
+                    color:#000;
+                }
+
+                .student-cert{
+                    min-height:140px;
+                }
+
+                .final-validation{
+                    min-height:160px;
+                }
+
+                .print-footer{
+                    margin-top:22px;
+                    border-top:3px solid #000;
+                    padding-top:13px;
+                    text-align:center;
+                    font-size:13px;
+                    line-height:1.4;
+                    color:#000;
                 }
             </style>
             ${document.getElementById('printLayout').innerHTML}
@@ -1722,7 +1888,7 @@ function downloadAsImage() {
             backgroundColor: '#ffffff'
         }).then(function(canvas) {
             const link = document.createElement('a');
-            link.download = 'student_clearance_result.png';
+            link.download = 'student_clearance_form.png';
             link.href = canvas.toDataURL('image/png');
             link.click();
             tempWrapper.remove();
