@@ -9,7 +9,7 @@ $error   = isset($_GET['error']) ? $_GET['error'] : '';
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Create Account</title>
+<title>Create Account | SPIST</title>
 
 <link rel="icon" type="image/png" href="../assets/logo2.png">
 
@@ -25,65 +25,115 @@ body.register-page{
     min-height:100vh;
     background:url("../assets/southern-night.png") no-repeat center center/cover;
     overflow-x:hidden;
+    position:relative;
+    padding:25px;
 }
 
-.register-bg-overlay{
+body.register-page::before{
+    content:"";
     position:fixed;
     inset:0;
-    background:rgba(0,0,0,.35);
+    background:
+        radial-gradient(circle at 20% 20%, rgba(22,199,103,.35), transparent 30%),
+        linear-gradient(135deg, rgba(0,40,25,.72), rgba(0,0,0,.58));
+    backdrop-filter:blur(5px);
     z-index:1;
+}
+
+.floating-logo{
+    position:fixed;
+    width:520px;
+    height:520px;
+    background:url("../assets/logo2.png") no-repeat center/contain;
+    opacity:.10;
+    filter:drop-shadow(0 0 40px rgba(255,255,255,.35));
+    animation:floatLogo 7s ease-in-out infinite;
+    z-index:1;
+    pointer-events:none;
+}
+
+@keyframes floatLogo{
+    0%,100%{transform:translateY(0) scale(1);}
+    50%{transform:translateY(-18px) scale(1.03);}
 }
 
 .register-wrapper{
     position:relative;
     z-index:2;
-    min-height:100vh;
+    min-height:calc(100vh - 50px);
     display:flex;
     justify-content:center;
     align-items:center;
-    padding:20px;
 }
 
 .register-card{
     position:relative;
     width:100%;
-    max-width:1150px;
+    max-width:1220px;
     display:grid;
-    grid-template-columns:1fr 1fr;
-    border-radius:30px;
+    grid-template-columns:1.1fr .9fr;
+    border-radius:35px;
     overflow:hidden;
-    background:rgba(255,255,255,.15);
-    backdrop-filter:blur(18px);
-    -webkit-backdrop-filter:blur(18px);
-    box-shadow:0 25px 60px rgba(0,0,0,.28);
+    background:rgba(255,255,255,.12);
+    border:1px solid rgba(255,255,255,.18);
+    backdrop-filter:blur(22px);
+    -webkit-backdrop-filter:blur(22px);
+    box-shadow:0 35px 90px rgba(0,0,0,.38);
 }
 
 .divider-glow{
     position:absolute;
     top:10%;
-    left:50%;
+    left:55%;
     transform:translateX(-50%);
     width:2px;
     height:80%;
     background:linear-gradient(to bottom, transparent, rgba(255,255,255,.95), transparent);
-    box-shadow:0 0 10px rgba(255,255,255,.55), 0 0 20px rgba(0,255,140,.25);
+    box-shadow:
+        0 0 12px rgba(255,255,255,.55),
+        0 0 28px rgba(0,255,140,.22);
     z-index:5;
+    animation:lineGlow 3s ease-in-out infinite;
 }
 
+@keyframes lineGlow{
+    0%,100%{opacity:.55;}
+    50%{opacity:1;}
+}
+
+/* FORM SIDE */
 .register-form-side{
-    background:rgba(255,255,255,.96);
-    padding:40px;
+    background:
+        linear-gradient(
+            180deg,
+            rgba(255,255,255,.98),
+            rgba(245,255,248,.96)
+        );
+    padding:45px;
     position:relative;
+    overflow:hidden;
+}
+
+.register-form-side::before{
+    content:"";
+    position:absolute;
+    top:-120px;
+    right:-120px;
+    width:260px;
+    height:260px;
+    border-radius:50%;
+    background:rgba(16,199,102,.08);
+    filter:blur(10px);
 }
 
 .back-btn{
     position:absolute;
     top:20px;
     left:20px;
-    width:42px;
-    height:42px;
+    width:44px;
+    height:44px;
     border-radius:50%;
-    background:rgba(10,92,45,.10);
+    background:rgba(10,92,45,.08);
     color:#0a5c2d;
     text-decoration:none;
     display:flex;
@@ -91,31 +141,60 @@ body.register-page{
     align-items:center;
     font-size:24px;
     font-weight:bold;
+    transition:.25s ease;
+    backdrop-filter:blur(10px);
+    z-index:3;
+}
+
+.back-btn:hover{
+    transform:scale(1.08);
+    background:#0a5c2d;
+    color:#fff;
+}
+
+.logo-circle{
+    width:92px;
+    height:92px;
+    margin:0 auto 14px;
+    border-radius:50%;
+    padding:6px;
+    background:linear-gradient(135deg,#ffffff,#16d56f);
+    box-shadow:0 18px 35px rgba(0,0,0,.18);
+}
+
+.logo-circle img{
+    width:100%;
+    height:100%;
+    border-radius:50%;
+    object-fit:contain;
+    background:#fff;
 }
 
 .form-title{
     text-align:center;
-    font-size:32px;
+    font-size:38px;
     font-weight:900;
     color:#0a5c2d;
-    margin-top:6px;
+    margin-top:4px;
+    letter-spacing:.8px;
 }
 
 .form-subtitle{
     text-align:center;
     font-size:14px;
     color:#666;
-    margin:8px 0 22px;
+    margin:10px 0 24px;
     font-weight:600;
 }
 
 .message-box{
     margin-bottom:16px;
-    padding:12px 14px;
-    border-radius:12px;
+    padding:13px 14px;
+    border-radius:16px;
     text-align:center;
     font-size:14px;
-    font-weight:700;
+    font-weight:800;
+    line-height:1.45;
 }
 
 .message-error{
@@ -141,7 +220,7 @@ body.register-page{
 .grid{
     display:grid;
     grid-template-columns:1fr 1fr;
-    gap:15px;
+    gap:16px;
 }
 
 .input-group{
@@ -152,46 +231,59 @@ body.register-page{
 
 .input-group label{
     font-size:13px;
-    font-weight:700;
+    font-weight:800;
     color:#0a5c2d;
-    margin-bottom:6px;
+    margin-bottom:7px;
+    letter-spacing:.3px;
 }
 
 .input-group input,
 .input-group select{
     width:100%;
-    height:52px;
-    border-radius:14px;
-    border:2px solid #ddd;
-    padding:0 15px;
+    height:56px;
+    border-radius:18px;
+    border:2px solid rgba(0,0,0,.08);
+    padding:0 16px;
     font-size:15px;
-    background:#fff;
+    background:rgba(255,255,255,.92);
     outline:none;
-    transition:.3s;
+    transition:.3s ease;
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.5),
+        0 2px 10px rgba(0,0,0,.03);
 }
 
 .input-group input:focus,
 .input-group select:focus{
-    border-color:#0bb15d;
-    box-shadow:0 0 0 3px rgba(11,177,93,.12);
+    border-color:#10c766;
+    background:#fff;
+    transform:translateY(-1px);
+    box-shadow:
+        0 0 0 4px rgba(16,199,102,.12),
+        0 10px 24px rgba(16,199,102,.10);
 }
 
 .password-group input{
-    padding-right:48px;
+    padding-right:52px;
 }
 
 .toggle-password{
     position:absolute;
-    right:15px;
-    top:40px;
+    right:16px;
+    top:42px;
     cursor:pointer;
     font-size:18px;
+    transition:.2s ease;
+}
+
+.toggle-password:hover{
+    transform:scale(1.1);
 }
 
 .helper-text{
-    margin-top:6px;
+    margin-top:7px;
     font-size:12px;
-    font-weight:700;
+    font-weight:800;
     min-height:18px;
 }
 
@@ -206,40 +298,92 @@ body.register-page{
 .email-note{
     margin-top:6px;
     font-size:12px;
-    font-weight:700;
+    font-weight:800;
     color:#0a5c2d;
 }
 
 .submit-btn{
     width:100%;
-    margin-top:22px;
-    height:52px;
+    margin-top:24px;
+    height:58px;
     border:none;
-    border-radius:14px;
-    background:linear-gradient(135deg,#10c766,#06984b);
+    border-radius:18px;
+    background:
+        linear-gradient(
+            135deg,
+            #10c766,
+            #0ba756,
+            #06984b
+        );
     color:#fff;
     font-size:16px;
-    font-weight:800;
+    font-weight:900;
+    letter-spacing:.6px;
     cursor:pointer;
-    box-shadow:0 12px 24px rgba(5,143,72,.25);
+    box-shadow:
+        0 18px 35px rgba(5,143,72,.22),
+        inset 0 1px 0 rgba(255,255,255,.25);
+    transition:.28s ease;
+    position:relative;
+    overflow:hidden;
+}
+
+.submit-btn:hover{
+    transform:translateY(-2px) scale(1.01);
+    box-shadow:
+        0 22px 40px rgba(5,143,72,.30),
+        inset 0 1px 0 rgba(255,255,255,.25);
+}
+
+.submit-btn:active{
+    transform:scale(.99);
+}
+
+.submit-btn.loading{
+    pointer-events:none;
+    opacity:.86;
+}
+
+.submit-btn.loading::after{
+    content:"";
+    width:20px;
+    height:20px;
+    border:3px solid rgba(255,255,255,.45);
+    border-top-color:#fff;
+    border-radius:50%;
+    position:absolute;
+    right:22px;
+    top:50%;
+    transform:translateY(-50%);
+    animation:spin .8s linear infinite;
+}
+
+@keyframes spin{
+    to{transform:translateY(-50%) rotate(360deg);}
 }
 
 .footer{
     text-align:center;
-    margin-top:14px;
+    margin-top:16px;
     font-size:14px;
     color:#333;
-    font-weight:600;
+    font-weight:700;
 }
 
 .footer a{
     color:#4f46e5;
     text-decoration:none;
-    font-weight:800;
+    font-weight:900;
 }
 
+.footer a:hover{
+    text-decoration:underline;
+}
+
+/* HEADER SIDE */
 .register-header{
-    padding:50px 46px;
+    position:relative;
+    padding:55px 48px;
     color:#fff;
     background:
         radial-gradient(circle at top left, rgba(255,255,255,.18), transparent 28%),
@@ -247,37 +391,74 @@ body.register-page{
     display:flex;
     flex-direction:column;
     justify-content:center;
+    overflow:hidden;
+}
+
+.register-header::after{
+    content:"";
+    position:absolute;
+    inset:0;
+    background:url("../assets/logo2.png") no-repeat center center;
+    background-size:360px;
+    opacity:.14;
+    filter:
+        brightness(1.3)
+        drop-shadow(0 0 18px rgba(255,255,255,.20));
+    pointer-events:none;
+}
+
+.brand-badge{
+    position:relative;
+    z-index:2;
+    width:max-content;
+    padding:9px 18px;
+    border-radius:999px;
+    background:rgba(255,255,255,.14);
+    border:1px solid rgba(255,255,255,.18);
+    color:#fff;
+    font-size:12px;
+    font-weight:900;
+    letter-spacing:1px;
+    margin-bottom:24px;
 }
 
 .school-title{
-    font-size:34px;
+    position:relative;
+    z-index:2;
+    font-size:38px;
     font-weight:900;
-    line-height:1.15;
-    margin-bottom:15px;
+    line-height:1.18;
+    margin-bottom:18px;
     text-transform:uppercase;
-    text-shadow:0 3px 10px rgba(0,0,0,.25);
+    text-shadow:0 4px 16px rgba(0,0,0,.35);
 }
 
 .school-subtitle{
-    font-size:26px;
+    position:relative;
+    z-index:2;
+    font-size:23px;
     font-weight:800;
-    margin-bottom:14px;
+    margin-bottom:16px;
     text-shadow:0 3px 10px rgba(0,0,0,.22);
 }
 
 .info-text{
+    position:relative;
+    z-index:2;
     font-size:15px;
     line-height:1.8;
     margin-bottom:24px;
     color:#ecfff4;
 }
 
+/* PASSWORD RULES SIDE */
 .password-rules-side{
+    position:relative;
+    z-index:2;
     margin-top:5px;
     padding:20px;
     border-radius:22px;
     text-align:left;
-
     background:
         linear-gradient(
             135deg,
@@ -285,12 +466,9 @@ body.register-page{
             rgba(17,140,82,0.82),
             rgba(143,188,103,0.72)
         );
-
     backdrop-filter:blur(20px);
     -webkit-backdrop-filter:blur(20px);
-
     border:2px solid rgba(255,255,255,0.35);
-
     box-shadow:
         inset 0 1px 0 rgba(255,255,255,0.25),
         0 18px 40px rgba(0,0,0,0.22),
@@ -324,10 +502,6 @@ body.register-page{
 }
 
 .rule-dot{
-    width:auto;
-    height:auto;
-    border:none;
-    border-radius:0;
     display:inline-flex;
     align-items:center;
     justify-content:center;
@@ -352,14 +526,17 @@ body.register-page{
     text-shadow:0 0 10px rgba(217,255,157,.9);
 }
 
+/* SUCCESS POPUP */
 .popup-overlay{
     position:fixed;
     inset:0;
-    background:rgba(0,0,0,.55);
+    background:rgba(0,0,0,.62);
     display:none;
     justify-content:center;
     align-items:center;
     z-index:999;
+    padding:20px;
+    backdrop-filter:blur(5px);
 }
 
 .popup-overlay.show{
@@ -368,16 +545,18 @@ body.register-page{
 
 .success-popup{
     width:100%;
-    max-width:420px;
-    background:#fff;
-    border-radius:24px;
-    padding:30px 24px;
+    max-width:430px;
+    background:rgba(255,255,255,.96);
+    border-radius:28px;
+    padding:32px 26px;
     text-align:center;
+    box-shadow:0 30px 80px rgba(0,0,0,.35);
+    border:1px solid rgba(255,255,255,.35);
 }
 
 .success-icon{
-    width:76px;
-    height:76px;
+    width:80px;
+    height:80px;
     margin:0 auto 16px;
     border-radius:50%;
     background:linear-gradient(135deg,#10c766,#06984b);
@@ -385,18 +564,34 @@ body.register-page{
     display:flex;
     justify-content:center;
     align-items:center;
-    font-size:38px;
+    font-size:40px;
     font-weight:900;
+    box-shadow:0 14px 28px rgba(5,143,72,.25);
 }
 
-.redirect-text{
-    margin-top:8px;
-    font-size:13px;
-    color:#666;
+.success-popup h2{
+    color:#0a5c2d;
+    margin-bottom:8px;
+}
+
+.success-popup p{
+    color:#555;
     font-weight:700;
 }
 
-@media(max-width:900px){
+.redirect-text{
+    margin-top:10px;
+    font-size:13px;
+    color:#666;
+    font-weight:800;
+}
+
+@media(max-width:950px){
+    body.register-page{
+        padding:18px;
+        overflow:auto;
+    }
+
     .register-card{
         grid-template-columns:1fr;
     }
@@ -404,11 +599,43 @@ body.register-page{
     .divider-glow{
         display:none;
     }
+
+    .register-header{
+        order:-1;
+        padding:45px 28px;
+        text-align:center;
+    }
+
+    .brand-badge{
+        margin-left:auto;
+        margin-right:auto;
+    }
+
+    .school-title{
+        font-size:29px;
+    }
+
+    .school-subtitle{
+        font-size:20px;
+    }
 }
 
 @media(max-width:800px){
     .grid{
         grid-template-columns:1fr;
+    }
+
+    .register-form-side{
+        padding:38px 22px;
+    }
+
+    .form-title{
+        font-size:30px;
+    }
+
+    .floating-logo{
+        width:340px;
+        height:340px;
     }
 }
 </style>
@@ -416,7 +643,7 @@ body.register-page{
 
 <body class="register-page">
 
-<div class="register-bg-overlay"></div>
+<div class="floating-logo"></div>
 
 <div class="register-wrapper">
 <div class="register-card">
@@ -426,6 +653,10 @@ body.register-page{
 <div class="register-form-side">
 
 <a href="login.php" class="back-btn">✕</a>
+
+<div class="logo-circle">
+    <img src="../assets/logo2.png" alt="SPIST Logo">
+</div>
 
 <h1 class="form-title">CREATE ACCOUNT</h1>
 <p class="form-subtitle">Fill in your details to continue</p>
@@ -513,7 +744,7 @@ required
 
 </div>
 
-<button type="submit" class="submit-btn">SIGN UP</button>
+<button type="submit" class="submit-btn" id="submitBtn">SIGN UP</button>
 
 <div class="footer">
 Already have an account? <a href="login.php">Back to Login</a>
@@ -523,8 +754,13 @@ Already have an account? <a href="login.php">Back to Login</a>
 </div>
 
 <div class="register-header">
+
+<div class="brand-badge">
+ONLINE CLEARANCE MANAGEMENT SYSTEM
+</div>
+
 <h2 class="school-title">SOUTHERN PHILIPPINES INSTITUTE OF SCIENCE AND TECHNOLOGY</h2>
-<p class="school-subtitle">Online Clearance Management System</p>
+<p class="school-subtitle">Create Your Clearance Account</p>
 <p class="info-text">
 Create your account to access a faster, smoother, and more organized academic clearance process for students and teachers.
 </p>
@@ -539,6 +775,7 @@ Create your account to access a faster, smoother, and more organized academic cl
 <li id="rule-match"><span class="rule-dot"></span><span class="rule-text">Password and confirm password match</span></li>
 </ul>
 </div>
+
 </div>
 
 </div>
@@ -615,6 +852,7 @@ const confirmPasswordInput=document.getElementById("cpass");
 const passwordStrengthText=document.getElementById("passwordStrengthText");
 const confirmPasswordText=document.getElementById("confirmPasswordText");
 const registerForm=document.getElementById("registerForm");
+const submitBtn=document.getElementById("submitBtn");
 
 const ruleLength=document.getElementById("rule-length");
 const ruleUppercase=document.getElementById("rule-uppercase");
@@ -737,6 +975,9 @@ registerForm.addEventListener("submit",function(e){
         alert("Confirm password does not match.");
         return;
     }
+
+    submitBtn.classList.add("loading");
+    submitBtn.textContent="CREATING ACCOUNT...";
 });
 
 <?php if($success==='1'): ?>

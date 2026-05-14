@@ -1,609 +1,668 @@
-<?php session_start(); ?>
-
 <?php
 $registered = isset($_GET['registered']) ? $_GET['registered'] : '';
 $error = isset($_GET['error']) ? $_GET['error'] : '';
+$success = isset($_GET['success']) ? $_GET['success'] : '';
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Login</title>
+
+<title>Login | SPIST</title>
 
 <link rel="icon" type="image/png" href="../assets/logo2.png">
 
 <style>
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    font-family: Arial, Helvetica, sans-serif;
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:Arial, Helvetica, sans-serif;
 }
 
-body.login-page {
-    min-height: 100vh;
-    background: url('../assets/southern-night.png') no-repeat center center/cover;
-    position: relative;
-    overflow-x: hidden;
+body{
+    min-height:100vh;
+
+    background:
+        url('../assets/southern-night.png')
+        no-repeat center center/cover;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    padding:25px;
+
+    overflow:hidden;
+    position:relative;
 }
 
-.login-bg-overlay {
-    position: fixed;
-    inset: 0;
-    background: linear-gradient(135deg, rgba(0, 40, 20, 0.42), rgba(0, 0, 0, 0.32));
-    backdrop-filter: blur(3px);
-    z-index: 1;
+/* OVERLAY */
+body::before{
+    content:"";
+
+    position:fixed;
+    inset:0;
+
+    background:
+        radial-gradient(circle at 20% 20%, rgba(22,199,103,.35), transparent 30%),
+        linear-gradient(135deg, rgba(0,40,25,.72), rgba(0,0,0,.58));
+
+    backdrop-filter:blur(5px);
+
+    z-index:1;
 }
 
-.login-wrapper {
-    position: relative;
-    z-index: 2;
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 30px 20px;
+/* FLOATING LOGO */
+.floating-logo{
+    position:fixed;
+
+    top:50%;
+    left:50%;
+
+    transform:translate(-50%, -50%);
+
+    width:520px;
+    height:520px;
+
+    background:
+        url('../assets/logo2.png')
+        no-repeat center/contain;
+
+    opacity:.10;
+
+    filter:
+        drop-shadow(0 0 40px rgba(255,255,255,.35));
+
+    animation:
+        floatingLogo 7s ease-in-out infinite,
+        rotateLogo 18s linear infinite;
+
+    z-index:1;
+
+    pointer-events:none;
 }
 
-.login-card {
-    position: relative;
-    width: 100%;
-    max-width: 1080px;
-    display: grid;
-    grid-template-columns: 0.92fr 1.08fr;
-    background: rgba(255, 255, 255, 0.12);
-    border: 1px solid rgba(255, 255, 255, 0.22);
-    border-radius: 30px;
-    overflow: hidden;
-    backdrop-filter: blur(18px);
-    -webkit-backdrop-filter: blur(18px);
-    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.28);
+@keyframes floatingLogo{
+
+    0%,100%{
+        transform:
+            translate(-50%, -50%)
+            translateY(0)
+            scale(1);
+    }
+
+    50%{
+        transform:
+            translate(-50%, -50%)
+            translateY(-18px)
+            scale(1.03);
+    }
 }
 
-.divider-glow {
-    position: absolute;
-    top: 10%;
-    left: 42.5%;
-    transform: translateX(-50%);
-    width: 2px;
-    height: 80%;
-    z-index: 5;
-    background: linear-gradient(to bottom, transparent, rgba(255,255,255,0.95), transparent);
+@keyframes rotateLogo{
+
+    from{
+        transform:
+            translate(-50%, -50%)
+            rotate(0deg);
+    }
+
+    to{
+        transform:
+            translate(-50%, -50%)
+            rotate(360deg);
+    }
+}
+
+/* MAIN CARD */
+.login-card{
+    position:relative;
+    z-index:2;
+
+    width:100%;
+    max-width:1180px;
+
+    display:grid;
+    grid-template-columns:1fr 1fr;
+
+    background:rgba(255,255,255,.12);
+
+    border:1px solid rgba(255,255,255,.18);
+
+    border-radius:35px;
+
+    overflow:hidden;
+
+    backdrop-filter:blur(22px);
+    -webkit-backdrop-filter:blur(22px);
+
+    box-shadow:0 35px 90px rgba(0,0,0,.38);
+}
+
+/* LEFT */
+.left-side{
+    position:relative;
+
+    padding:65px 55px;
+
+    background:
+        radial-gradient(circle at top right, rgba(255,255,255,0.14), transparent 35%),
+        linear-gradient(135deg,#0f5132 0%,#0b6b40 28%,#0d8c4e 62%,#10b15d 100%);
+
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+
+    overflow:hidden;
+}
+
+.left-side::after{
+    content:"";
+
+    position:absolute;
+    inset:0;
+
+    background:
+        url('../assets/logo2.png')
+        no-repeat center center;
+
+    background-size:360px;
+
+    opacity:.15;
+
+    filter:
+        brightness(1.3)
+        drop-shadow(0 0 18px rgba(255,255,255,.20));
+}
+
+.brand-badge{
+    position:relative;
+    z-index:2;
+
+    width:max-content;
+
+    padding:9px 18px;
+
+    border-radius:999px;
+
+    background:rgba(255,255,255,.14);
+
+    border:1px solid rgba(255,255,255,.18);
+
+    color:#fff;
+
+    font-size:12px;
+    font-weight:900;
+
+    letter-spacing:1px;
+
+    margin-bottom:24px;
+}
+
+.school-title{
+    position:relative;
+    z-index:2;
+
+    color:#fff;
+
+    font-size:42px;
+    line-height:1.18;
+
+    font-weight:900;
+
+    margin-bottom:22px;
+
+    text-shadow:0 4px 16px rgba(0,0,0,.35);
+}
+
+.school-subtitle{
+    position:relative;
+    z-index:2;
+
+    color:rgba(255,255,255,.94);
+
+    font-size:21px;
+    line-height:1.7;
+
+    font-weight:600;
+
+    max-width:470px;
+}
+
+.glass-line{
+    position:absolute;
+
+    right:0;
+    top:12%;
+
+    width:2px;
+    height:76%;
+
+    background:
+        linear-gradient(
+            to bottom,
+            transparent,
+            rgba(255,255,255,.95),
+            transparent
+        );
+
     box-shadow:
-        0 0 10px rgba(255,255,255,0.55),
-        0 0 20px rgba(0,255,140,0.30),
-        0 0 38px rgba(0,255,140,0.18);
-    animation: glowMove 3s ease-in-out infinite;
-    pointer-events: none;
+        0 0 12px rgba(255,255,255,.55),
+        0 0 28px rgba(0,255,140,.22);
+
+    animation:lineGlow 3s ease-in-out infinite;
 }
 
-@keyframes glowMove {
-    0% {
-        opacity: 0.55;
-        transform: translateX(-50%) scaleY(0.96);
+@keyframes lineGlow{
+
+    0%,100%{
+        opacity:.55;
     }
-    50% {
-        opacity: 1;
-        transform: translateX(-50%) scaleY(1);
-    }
-    100% {
-        opacity: 0.55;
-        transform: translateX(-50%) scaleY(0.96);
+
+    50%{
+        opacity:1;
     }
 }
 
-.login-form-side {
-    background: rgba(255, 255, 255, 0.93);
-    padding: 55px 42px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    position: relative;
-    z-index: 2;
+/* RIGHT */
+.right-side{
+    position:relative;
+
+    background:rgba(255,255,255,.92);
+
+    padding:55px 48px;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
 }
 
-.form-title {
-    text-align: center;
-    font-size: 36px;
-    font-weight: 800;
-    color: #0a5c2d;
-    margin-bottom: 10px;
-    letter-spacing: 1px;
+.form-container{
+    width:100%;
+    max-width:430px;
 }
 
-.form-subtitle {
-    text-align: center;
-    font-size: 14px;
-    color: #666;
-    margin-bottom: 22px;
-    font-weight: 600;
+.logo-circle{
+    width:105px;
+    height:105px;
+
+    margin:0 auto 18px;
+
+    border-radius:50%;
+
+    padding:7px;
+
+    background:
+        linear-gradient(
+            135deg,
+            #ffffff,
+            #16d56f
+        );
+
+    box-shadow:0 18px 35px rgba(0,0,0,.20);
 }
 
+.logo-circle img{
+    width:100%;
+    height:100%;
+
+    border-radius:50%;
+
+    object-fit:contain;
+
+    background:#fff;
+}
+
+.form-title{
+    text-align:center;
+
+    font-size:38px;
+    font-weight:900;
+
+    color:#0a5c2d;
+
+    margin-bottom:8px;
+}
+
+.form-subtitle{
+    text-align:center;
+
+    color:#667085;
+
+    font-size:15px;
+
+    margin-bottom:24px;
+
+    font-weight:600;
+}
+
+/* ALERTS */
 .success-message,
-.error-message {
-    margin-bottom: 16px;
-    padding: 12px 14px;
-    border-radius: 12px;
-    font-size: 14px;
-    font-weight: 700;
-    text-align: center;
+.error-message{
+    padding:14px;
+
+    border-radius:16px;
+
+    font-size:14px;
+
+    font-weight:800;
+
+    text-align:center;
+
+    margin-bottom:16px;
+
+    line-height:1.5;
 }
 
-.success-message {
-    background: #e9fff1;
-    color: #0a7a3d;
-    border: 1px solid #9de0b7;
+.success-message{
+    background:#ebfff3;
+    border:1px solid #9de0b7;
+    color:#0a7a3d;
 }
 
-.error-message {
-    background: #ffe9e9;
-    color: #b10000;
-    border: 1px solid #ffb3b3;
+.error-message{
+    background:#ffe9e9;
+    border:1px solid #ffb3b3;
+    color:#b10000;
 }
 
-.form-area {
-    width: 100%;
+/* INPUT */
+.input-group{
+    position:relative;
+    margin-bottom:18px;
 }
 
-.input-group {
-    position: relative;
-    margin-bottom: 22px;
+.input-group input{
+    width:100%;
+    height:60px;
+
+    border:2px solid #d8e0db;
+
+    border-radius:18px;
+
+    padding:20px 54px 8px 18px;
+
+    outline:none;
+
+    font-size:16px;
+
+    background:#fff;
+
+    transition:.25s ease;
 }
 
-.input-group input {
-    width: 100%;
-    height: 58px;
-    padding: 20px 16px 10px 16px;
-    border: 2px solid #cfd8d3;
-    border-radius: 16px;
-    outline: none;
-    font-size: 16px;
-    background: #fff;
-    color: #222;
-    transition: 0.3s ease;
+.input-group input:focus{
+    border-color:#10c766;
+
+    box-shadow:0 0 0 5px rgba(16,199,102,.14);
 }
 
-.input-group input:focus {
-    border-color: #0bb15d;
-    box-shadow: 0 0 0 4px rgba(11, 177, 93, 0.12);
-}
+.input-group label{
+    position:absolute;
 
-.input-group label {
-    position: absolute;
-    left: 16px;
-    top: 18px;
-    font-size: 15px;
-    color: #666;
-    pointer-events: none;
-    transition: 0.25s ease;
-    background: #fff;
-    padding: 0 6px;
-    border-radius: 10px;
+    left:18px;
+    top:20px;
+
+    color:#667085;
+
+    font-size:15px;
+
+    pointer-events:none;
+
+    transition:.25s ease;
+
+    background:#fff;
+
+    padding:0 5px;
+
+    font-weight:700;
 }
 
 .input-group input:focus + label,
-.input-group input:not(:placeholder-shown) + label {
-    top: -9px;
-    left: 12px;
-    font-size: 12px;
-    color: #0a8a45;
-    font-weight: 700;
+.input-group input:not(:placeholder-shown) + label{
+
+    top:-8px;
+
+    font-size:11px;
+
+    color:#0a8a45;
 }
 
-.password-group input {
-    padding-right: 54px;
+.toggle-password{
+    position:absolute;
+
+    right:18px;
+    top:50%;
+
+    transform:translateY(-50%);
+
+    cursor:pointer;
+
+    font-size:18px;
 }
 
-.toggle-password {
-    position: absolute;
-    right: 16px;
-    top: 50%;
-    transform: translateY(-50%);
-    cursor: pointer;
-    font-size: 18px;
-    color: #555;
-    user-select: none;
-    z-index: 3;
-    line-height: 1;
-}
+/* BUTTON */
+.green-btn{
+    width:100%;
+    height:58px;
 
-.green-btn {
-    width: 100%;
-    height: 55px;
-    border: none;
-    border-radius: 16px;
-    background: linear-gradient(135deg, #10c766, #06984b);
-    color: #fff;
-    font-size: 17px;
-    font-weight: 800;
-    letter-spacing: 0.5px;
-    cursor: pointer;
-    margin-top: 6px;
-    box-shadow: 0 12px 24px rgba(5, 143, 72, 0.25);
-}
+    border:none;
 
-.forgot-link {
-    display: block;
-    text-align: center;
-    margin-top: 16px;
-    text-decoration: none;
-    color: #0a5c2d;
-    font-size: 14px;
-    font-weight: 700;
-}
+    border-radius:18px;
 
-.forgot-link:hover {
-    color: #13a257;
-    text-decoration: underline;
-}
-
-.text-link {
-    margin-top: 20px;
-    text-align: center;
-    font-size: 15px;
-    color: #333;
-    font-weight: 600;
-}
-
-.text-link a {
-    color: #6a41ff;
-    text-decoration: none;
-    font-weight: 800;
-}
-
-.text-link a:hover {
-    text-decoration: underline;
-}
-
-.login-header {
-    position: relative;
-    padding: 65px 48px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    color: #fff;
     background:
-        radial-gradient(circle at top right, rgba(255,255,255,0.16), transparent 34%),
-        radial-gradient(circle at bottom left, rgba(255,255,255,0.08), transparent 28%),
-        linear-gradient(135deg, #0f5132 0%, #0b6b40 28%, #0d8c4e 62%, #10b15d 100%);
-    box-shadow: inset 0 0 60px rgba(0,0,0,0.22);
-    z-index: 2;
-    overflow: hidden;
-    isolation: isolate;
+        linear-gradient(
+            135deg,
+            #10c766,
+            #06984b
+        );
+
+    color:#fff;
+
+    font-size:16px;
+    font-weight:900;
+
+    cursor:pointer;
+
+    box-shadow:0 16px 30px rgba(5,143,72,.28);
+
+    transition:.25s ease;
+
+    position:relative;
+    overflow:hidden;
 }
 
-.login-header::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background: url('../assets/logo2.png') no-repeat center center;
-    background-size: 370px;
-    opacity: 0.26;
-    filter:
-        brightness(1.35)
-        contrast(1.15)
-        drop-shadow(0 0 20px rgba(255,255,255,0.25));
-    pointer-events: none;
-    z-index: 1;
-    transform: scale(1.03);
+.green-btn:hover{
+    transform:translateY(-2px);
 }
 
-.school-title,
-.school-subtitle {
-    position: relative;
-    z-index: 2;
+.green-btn.loading{
+    pointer-events:none;
+    opacity:.85;
 }
 
-.school-title {
-    font-size: 38px;
-    line-height: 1.12;
-    font-weight: 900;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    margin-bottom: 22px;
-    color: #ffffff;
-    text-shadow:
-        0 4px 12px rgba(0, 0, 0, 0.35),
-        0 0 14px rgba(255,255,255,0.14);
+.green-btn.loading::after{
+    content:"";
+
+    width:20px;
+    height:20px;
+
+    border:3px solid rgba(255,255,255,.45);
+
+    border-top-color:#fff;
+
+    border-radius:50%;
+
+    position:absolute;
+
+    right:20px;
+    top:50%;
+
+    transform:translateY(-50%);
+
+    animation:spin .8s linear infinite;
 }
 
-.school-subtitle {
-    font-size: 31px;
-    line-height: 1.35;
-    color: rgba(255, 255, 255, 0.97);
-    font-weight: 800;
-    margin-top: 4px;
-    text-shadow: 0 3px 10px rgba(0, 0, 0, 0.25);
-    max-width: 430px;
-}
-
-.modal-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.55);
-    display: none;
-    align-items: center;
-    justify-content: center;
-    z-index: 999;
-    padding: 20px;
-}
-
-.modal-overlay.show {
-    display: flex;
-}
-
-.forgot-modal-box,
-.contact-modal-box {
-    position: relative;
-    width: 100%;
-    max-width: 500px;
-    border-radius: 22px;
-    padding: 30px 28px;
-    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.25);
-    animation: popupFade 0.25s ease;
-}
-
-.forgot-modal-box {
-    background: #fff;
-}
-
-.contact-modal-box {
-    max-width: 1100px;
-    background: linear-gradient(135deg, #0f5132 0%, #0b6b40 28%, #0d8c4e 62%, #10b15d 100%);
-    box-shadow:
-        0 25px 60px rgba(0, 0, 0, 0.30),
-        inset 0 0 50px rgba(0,0,0,0.18);
-    border: 1px solid rgba(255,255,255,0.18);
-    overflow: hidden;
-    isolation: isolate;
-}
-
-.contact-modal-box::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background:
-        radial-gradient(circle at top right, rgba(255,255,255,0.10), transparent 30%),
-        radial-gradient(circle at bottom left, rgba(255,255,255,0.05), transparent 25%);
-    pointer-events: none;
-    z-index: 1;
-}
-
-.contact-modal-box::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background: url('../assets/logo2.png') no-repeat center center;
-    background-size: 360px;
-    opacity: 0.20;
-    filter: brightness(1.25) contrast(1.1) drop-shadow(0 0 18px rgba(255,255,255,0.18));
-    pointer-events: none;
-    z-index: 1;
-}
-
-.forgot-modal-box h2,
-.contact-modal-box h2 {
-    text-align: center;
-    margin-bottom: 18px;
-    font-size: 28px;
-    font-weight: 800;
-    position: relative;
-    z-index: 2;
-}
-
-.forgot-modal-box h2 {
-    color: #0a5c2d;
-}
-
-.contact-modal-box h2 {
-    color: #ffffff;
-    letter-spacing: 1px;
-    text-shadow: 0 3px 10px rgba(0,0,0,0.22);
-}
-
-.close-modal,
-.contact-close {
-    position: absolute;
-    top: 12px;
-    right: 18px;
-    font-size: 30px;
-    cursor: pointer;
-    font-weight: bold;
-    z-index: 3;
-}
-
-.close-modal {
-    color: #444;
-}
-
-.contact-close {
-    color: #ffffff;
-}
-
-.question-icon {
-    position: absolute;
-    top: 14px;
-    left: 18px;
-    width: 34px;
-    height: 34px;
-    background: #0bb15d;
-    color: #fff;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 800;
-    cursor: pointer;
-    font-size: 18px;
-}
-
-.forgot-content p {
-    font-size: 16px;
-    color: #333;
-    line-height: 1.8;
-    margin-bottom: 10px;
-    text-align: center;
-}
-
-.red-mark {
-    color: red;
-    font-weight: bold;
-    margin-right: 5px;
-}
-
-.contact-cards {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 20px;
-    margin-top: 20px;
-    position: relative;
-    z-index: 2;
-}
-
-.contact-card {
-    background: rgba(255,255,255,0.08);
-    border: 1px solid rgba(255,255,255,0.16);
-    border-radius: 20px;
-    padding: 22px 18px;
-    text-align: center;
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    box-shadow: inset 0 0 14px rgba(255,255,255,0.04);
-}
-
-.profile-icon {
-    width: 95px;
-    height: 95px;
-    margin: 0 auto 14px;
-    border-radius: 50%;
-    overflow: hidden;
-    border: 4px solid #16d26e;
-    background: rgba(255,255,255,0.10);
-    box-shadow: 0 0 16px rgba(22,210,110,0.18);
-}
-
-.profile-icon img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-.contact-card h3 {
-    color: #ffffff;
-    font-size: 18px;
-    margin-bottom: 12px;
-    text-shadow: 0 2px 8px rgba(0,0,0,0.18);
-}
-
-.contact-card p {
-    font-size: 14px;
-    color: rgba(255,255,255,0.94);
-    line-height: 1.6;
-    margin-bottom: 8px;
-}
-
-.contact-card strong {
-    color: #ffffff;
-}
-
-@keyframes popupFade {
-    from {
-        opacity: 0;
-        transform: scale(0.96);
-    }
-    to {
-        opacity: 1;
-        transform: scale(1);
+@keyframes spin{
+    to{
+        transform:translateY(-50%) rotate(360deg);
     }
 }
 
-@media (max-width: 900px) {
-    .login-card {
-        grid-template-columns: 1fr;
+.forgot-link{
+    display:block;
+
+    margin-top:18px;
+
+    text-align:center;
+
+    text-decoration:none;
+
+    color:#0a5c2d;
+
+    font-size:14px;
+
+    font-weight:800;
+}
+
+.forgot-link:hover{
+    color:#10c766;
+}
+
+.text-link{
+    margin-top:24px;
+
+    text-align:center;
+
+    font-size:15px;
+
+    color:#333;
+
+    font-weight:700;
+}
+
+.text-link a{
+    color:#6d28d9;
+
+    text-decoration:none;
+
+    font-weight:900;
+}
+
+.text-link a:hover{
+    text-decoration:underline;
+}
+
+/* MOBILE */
+@media(max-width:950px){
+
+    .login-card{
+        grid-template-columns:1fr;
     }
 
-    .divider-glow {
-        display: none;
+    .glass-line{
+        display:none;
     }
 
-    .login-header {
-        padding: 40px 28px;
-        text-align: center;
+    .left-side{
+        padding:45px 28px;
+        text-align:center;
     }
 
-    .login-header::after {
-        background-size: 250px;
-        opacity: 0.20;
+    .school-title{
+        font-size:30px;
     }
 
-    .school-title {
-        font-size: 28px;
+    .school-subtitle{
+        max-width:100%;
+        font-size:18px;
     }
 
-    .school-subtitle {
-        font-size: 24px;
-        max-width: 100%;
-        margin: 0 auto;
-    }
-
-    .login-form-side {
-        padding: 35px 25px;
+    .right-side{
+        padding:38px 22px;
     }
 }
 
-@media (max-width: 500px) {
-    .login-header::after {
-        background-size: 190px;
-        opacity: 0.18;
+@media(max-width:520px){
+
+    .school-title{
+        font-size:24px;
     }
 
-    .school-title {
-        font-size: 22px;
+    .school-subtitle{
+        font-size:16px;
     }
 
-    .school-subtitle {
-        font-size: 18px;
+    .form-title{
+        font-size:30px;
     }
 
-    .form-title {
-        font-size: 28px;
-    }
-
-    .input-group input {
-        height: 54px;
-        font-size: 15px;
-    }
-
-    .green-btn {
-        height: 52px;
-        font-size: 15px;
-    }
-
-    .contact-modal-box {
-        max-width: 100%;
-        padding: 24px 16px;
+    .floating-logo{
+        width:340px;
+        height:340px;
     }
 }
+
 </style>
 </head>
 
-<body class="login-page">
+<body>
 
-<div class="login-bg-overlay"></div>
+<div class="floating-logo"></div>
 
-<div class="login-wrapper">
-    <div class="login-card">
+<div class="login-card">
 
-        <div class="divider-glow"></div>
+    <!-- LEFT -->
+    <div class="left-side">
 
-        <div class="login-form-side">
-            <h1 class="form-title">LOG IN</h1>
-            <p class="form-subtitle">Enter your account to continue</p>
+        <div class="glass-line"></div>
+
+        <div class="brand-badge">
+            ONLINE CLEARANCE MANAGEMENT SYSTEM
+        </div>
+
+        <h1 class="school-title">
+            SOUTHERN PHILIPPINES INSTITUTE OF SCIENCE AND TECHNOLOGY
+        </h1>
+
+        <p class="school-subtitle">
+            Securely manage student clearance transactions,
+            teacher approvals, and academic processes in one modern platform.
+        </p>
+
+    </div>
+
+    <!-- RIGHT -->
+    <div class="right-side">
+
+        <div class="form-container">
+
+            <div class="logo-circle">
+                <img src="../assets/logo2.png" alt="Logo">
+            </div>
+
+            <h2 class="form-title">
+                Welcome Back
+            </h2>
+
+            <p class="form-subtitle">
+                Sign in to continue to your account
+            </p>
 
             <?php if ($registered === '1'): ?>
                 <div class="success-message">
                     Account created successfully. You can now log in.
+                </div>
+            <?php endif; ?>
+
+            <?php if (!empty($success)): ?>
+                <div class="success-message">
+                    <?php echo htmlspecialchars($success); ?>
                 </div>
             <?php endif; ?>
 
@@ -613,153 +672,107 @@ body.login-page {
                 </div>
             <?php endif; ?>
 
-            <form action="process_login.php" method="POST" class="form-area">
+            <form
+                action="process_login.php"
+                method="POST"
+                onsubmit="return startLoading();"
+            >
+
                 <div class="input-group">
-                    <input type="email" name="email" id="email" placeholder=" " required>
-                    <label for="email">Email</label>
+
+                    <input
+                        type="email"
+                        name="email"
+                        id="email"
+                        placeholder=" "
+                        required
+                    >
+
+                    <label for="email">
+                        Email Address
+                    </label>
+
                 </div>
 
-                <div class="input-group password-group">
-                    <input type="password" name="password" id="loginPassword" placeholder=" " required>
-                    <label for="loginPassword">Password</label>
-                    <span class="toggle-password" onclick="togglePassword('loginPassword', this)">👁</span>
+                <div class="input-group">
+
+                    <input
+                        type="password"
+                        name="password"
+                        id="loginPassword"
+                        placeholder=" "
+                        required
+                    >
+
+                    <label for="loginPassword">
+                        Password
+                    </label>
+
+                    <span
+                        class="toggle-password"
+                        onclick="togglePassword('loginPassword', this)"
+                    >
+                        👁
+                    </span>
+
                 </div>
 
-                <button type="submit" class="green-btn">SIGN IN</button>
-                <a href="#" id="forgotPasswordBtn" class="forgot-link">Forgot Password?</a>
+                <button
+                    type="submit"
+                    class="green-btn"
+                    id="loginBtn"
+                >
+                    SIGN IN
+                </button>
+
+                <a href="forgot_password.php" class="forgot-link">
+                    Forgot Password?
+                </a>
+
             </form>
 
             <p class="text-link">
                 Don’t have an account?
-                <a href="register.php">Create</a>
+                <a href="register.php">
+                    Create Account
+                </a>
             </p>
-        </div>
 
-        <div class="login-header">
-            <h2 class="school-title">SOUTHERN PHILIPPINES INSTITUTE OF SCIENCE AND TECHNOLOGY</h2>
-            <p class="school-subtitle">Online Clearance Management System</p>
         </div>
 
     </div>
-</div>
 
-<div id="forgotModal" class="modal-overlay">
-    <div class="forgot-modal-box">
-        <span class="close-modal" id="closeForgotModal">&times;</span>
-        <span class="question-icon" id="openContactModal">?</span>
-
-        <h2>Forgot Password?</h2>
-
-        <div class="forgot-content">
-            <p><span class="red-mark">!</span>Password reset is managed by the administrator.</p>
-            <p>Kindly contact the admin for assistance.</p>
-            <p>Please click the question mark reminder for your OLD PASSWORD.</p>
-        </div>
-    </div>
-</div>
-
-<div id="contactModal" class="modal-overlay">
-    <div class="contact-modal-box">
-        <span class="contact-close" id="closeContactModal">&times;</span>
-
-        <h2>CONTACT US</h2>
-
-        <div class="contact-cards">
-            <div class="contact-card">
-                <div class="profile-icon">
-                    <img src="../assets/gian.jpg" alt="Gian Esio">
-                </div>
-                <h3>GIAN ESIO</h3>
-                <p><strong>NO.</strong><br>09851642711</p>
-                <p><strong>FB:</strong><br>GIAN ESIO</p>
-                <p><strong>GMAIL:</strong><br>c23-4908-01</p>
-            </div>
-
-            <div class="contact-card">
-                <div class="profile-icon">
-                    <img src="../assets/mark.jpg" alt="Mark Paredes">
-                </div>
-                <h3>MARK PAREDES</h3>
-                <p><strong>NO.</strong><br>09925383649</p>
-                <p><strong>FB:</strong><br>MARK PAREDES</p>
-                <p><strong>GMAIL:</strong><br>c23-4908-02</p>
-            </div>
-
-            <div class="contact-card">
-                <div class="profile-icon">
-                    <img src="../assets/cj.jpg" alt="CJ Balog">
-                </div>
-                <h3>CJ BALOG</h3>
-                <p><strong>NO.</strong><br>09602097975</p>
-                <p><strong>FB:</strong><br>CJ BALOG</p>
-                <p><strong>GMAIL:</strong><br>c23-4908-03</p>
-            </div>
-
-            <div class="contact-card">
-                <div class="profile-icon">
-                    <img src="../assets/gerald.jpg" alt="Gerald Mamay">
-                </div>
-                <h3>GERALD MAMAY</h3>
-                <p><strong>NO.</strong><br>09477893124</p>
-                <p><strong>FB:</strong><br>HERALDO</p>
-                <p><strong>GMAIL:</strong><br>c23-4908-04</p>
-            </div>
-        </div>
-    </div>
 </div>
 
 <script>
-function togglePassword(inputId, icon) {
+
+function togglePassword(inputId, icon){
+
     const input = document.getElementById(inputId);
 
-    if (input.type === "password") {
+    if(input.type === "password"){
+
         input.type = "text";
         icon.textContent = "🙈";
-    } else {
+
+    }else{
+
         input.type = "password";
         icon.textContent = "👁";
     }
 }
 
-const forgotBtn = document.getElementById("forgotPasswordBtn");
-const forgotModal = document.getElementById("forgotModal");
-const closeForgotModal = document.getElementById("closeForgotModal");
+function startLoading(){
 
-const openContactModal = document.getElementById("openContactModal");
-const contactModal = document.getElementById("contactModal");
-const closeContactModal = document.getElementById("closeContactModal");
+    const btn = document.getElementById("loginBtn");
 
-forgotBtn.addEventListener("click", function(e) {
-    e.preventDefault();
-    forgotModal.classList.add("show");
-});
+    btn.classList.add("loading");
 
-closeForgotModal.addEventListener("click", function() {
-    forgotModal.classList.remove("show");
-});
+    btn.textContent = "SIGNING IN...";
 
-forgotModal.addEventListener("click", function(e) {
-    if (e.target === forgotModal) {
-        forgotModal.classList.remove("show");
-    }
-});
+    return true;
+}
 
-openContactModal.addEventListener("click", function() {
-    forgotModal.classList.remove("show");
-    contactModal.classList.add("show");
-});
-
-closeContactModal.addEventListener("click", function() {
-    contactModal.classList.remove("show");
-    forgotModal.classList.add("show");
-});
-
-contactModal.addEventListener("click", function(e) {
-    if (e.target === contactModal) {
-        contactModal.classList.remove("show");
-        forgotModal.classList.add("show");
-    }
-});
 </script>
 
 </body>

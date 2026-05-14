@@ -15,7 +15,7 @@ if (empty($email) || empty($password)) {
     exit;
 }
 
-$hashed_password = md5($password);
+$md5_password = md5($password);
 
 /* ACTIVITY LOG FUNCTION */
 function add_activity_log($conn, $user_id, $user_name, $user_role, $action_type, $description) {
@@ -38,11 +38,34 @@ function add_activity_log($conn, $user_id, $user_name, $user_role, $action_type,
             $ip_address
         );
         $stmt->execute();
+        $stmt->close();
     }
 }
 
+/* CHECK PASSWORD: SUPPORT MD5 + password_hash */
+function password_matches($input_password, $stored_password) {
+    if (empty($stored_password)) {
+        return false;
+    }
+
+    if ($stored_password === md5($input_password)) {
+        return true;
+    }
+
+    if (password_verify($input_password, $stored_password)) {
+        return true;
+    }
+
+    return false;
+}
+
 /* ADMIN / SUPER ADMIN LOGIN */
-$admin_stmt = $conn->prepare("SELECT id, name, email, password, role FROM admin WHERE email = ?");
+$admin_stmt = $conn->prepare("
+    SELECT id, name, email, password, role 
+    FROM admin 
+    WHERE email = ?
+    LIMIT 1
+");
 $admin_stmt->bind_param("s", $email);
 $admin_stmt->execute();
 $admin_result = $admin_stmt->get_result();
@@ -50,7 +73,7 @@ $admin_result = $admin_stmt->get_result();
 if ($admin_result->num_rows > 0) {
     $admin = $admin_result->fetch_assoc();
 
-    if ($admin['password'] === $hashed_password) {
+    if (password_matches($password, $admin['password'])) {
 
         $_SESSION['user_id'] = $admin['id'];
         $_SESSION['name'] = $admin['name'];
@@ -79,49 +102,57 @@ if ($admin_result->num_rows > 0) {
     }
 }
 
+$admin_stmt->close();
+
 /* STUDENT / TEACHER LOGIN */
 $user_stmt = $conn->prepare("
-    SELECT id, firstname, lastname, email, role, course 
+    SELECT id, firstname, lastname, email, password, role, course 
     FROM users 
-    WHERE email = ? AND password = ?
+    WHERE email = ?
+    LIMIT 1
 ");
-$user_stmt->bind_param("ss", $email, $hashed_password);
+$user_stmt->bind_param("s", $email);
 $user_stmt->execute();
 $user_result = $user_stmt->get_result();
 
 if ($user_result->num_rows > 0) {
     $user = $user_result->fetch_assoc();
 
-    $_SESSION['user_id'] = $user['id'];
-    $_SESSION['firstname'] = $user['firstname'];
-    $_SESSION['lastname'] = $user['lastname'];
-    $_SESSION['email'] = $user['email'];
-    $_SESSION['role'] = $user['role'];
-    $_SESSION['course'] = $user['course'];
+    if (password_matches($password, $user['password'])) {
 
-    $full_name = trim($user['firstname'] . " " . $user['lastname']);
-    $display_role = ucfirst($user['role']);
+        $_SESSION['user_id'] = $user['id'];
+        $_SESSION['firstname'] = $user['firstname'];
+        $_SESSION['lastname'] = $user['lastname'];
+        $_SESSION['email'] = $user['email'];
+        $_SESSION['role'] = $user['role'];
+        $_SESSION['course'] = $user['course'];
 
-    add_activity_log(
-        $conn,
-        $user['id'],
-        $full_name,
-        $user['role'],
-        'LOGIN',
-        $display_role . " logged in to the system."
-    );
+        $full_name = trim($user['firstname'] . " " . $user['lastname']);
+        $display_role = ucfirst($user['role']);
 
-    if ($user['role'] === 'teacher') {
-        header("Location: ../dashboard/teacher.php");
-        exit;
-    } elseif ($user['role'] === 'student') {
-        header("Location: ../dashboard/student.php");
-        exit;
-    } else {
-        header("Location: login.php?error=" . urlencode("Invalid user role found."));
-        exit;
+        add_activity_log(
+            $conn,
+            $user['id'],
+            $full_name,
+            $user['role'],
+            'LOGIN',
+            $display_role . " logged in to the system."
+        );
+
+        if ($user['role'] === 'teacher') {
+            header("Location: ../dashboard/teacher.php");
+            exit;
+        } elseif ($user['role'] === 'student') {
+            header("Location: ../dashboard/student.php");
+            exit;
+        } else {
+            header("Location: login.php?error=" . urlencode("Invalid user role found."));
+            exit;
+        }
     }
 }
+
+$user_stmt->close();
 
 header("Location: login.php?error=" . urlencode("Invalid email or password."));
 exit;
